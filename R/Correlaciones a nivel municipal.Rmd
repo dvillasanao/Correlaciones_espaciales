@@ -1,0 +1,547 @@
+---
+title: "Análisis geoespacial a nivel municipal"
+author: "Diana Villasana Ocampo"
+knit: (function(inputFile, encoding) {
+    rmarkdown::render(inputFile, encoding = encoding, output_dir = "Output/")
+  })
+output:
+   html_document:
+      code_folding: hide
+      highlight: tango
+      theme: flatly
+      toc: true
+      toc_depth: 3
+      toc_float:
+        collapsed: yes
+---
+<style type="text/css">
+body {
+text-align: justify;
+font-style: normal;
+font-family: "Montserrat";
+font-size: 12px
+}
+h1.title {
+  font-size: 40px;
+  color: #000D3B;
+}
+h1 {
+  color: #B6854D;
+}
+h2 {
+  color: #172984;
+}
+h3 {
+  color: #172984;
+}
+</style>
+
+<style>
+.nav>li>a {
+    position: relative;
+    display: block;
+    padding: 10px 15px;
+    color: #1C3BA4
+}
+.nav-pills>li.active>a, .nav-pills>li.active>a:hover, .nav-pills>li>a:focus {
+    color: #ffffff;
+    background-color: #09C2BC
+}
+</style>
+
+<style>
+.tile1-text {
+    position: relative;
+    display: block;
+    padding: 10px 15px;
+    color: #0A6A87;
+    list-style: none;
+}
+.top1-tiles a:nth-of-type(1):hover, .top-tiles1 a:nth-of-type(1):focus{
+    color: #ffffff;
+    background: #0A6A87
+}
+</style> 
+
+<style>
+.tile2-text {
+    position: relative;
+    display: block;
+    padding: 10px 15px;
+    color: #0A6CC8;
+    list-style: none;
+}
+.top2-tiles a:nth-of-type(1):hover, .top2-tiles a:nth-of-type(1):focus{
+    color: #ffffff;
+    background: #0A6CC8
+}
+</style>
+
+\color{#B6854D}{\text{}}{-}
+
+<style>
+.math {
+  font-size: 15px;
+  color: #B6854D;
+}
+</style>
+
+
+https://rpubs.com/erikaaldisa/spatialclustering
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = TRUE, 
+                      cache.lazy = FALSE, class.source = "fold-hide")
+knitr::opts_knit$set(root.dir = here::here())
+setwd(here::here())
+```
+
+```{r,echo=FALSE, eval=FALSE}
+rm(list = ls())
+```
+
+```{r, echo = FALSE, results=FALSE}
+# Paquetes que se usaron en el documento 
+require(dplyr)          #A Grammar of Data Manipulation 
+require(forcats)        #Tools for Working with Categorical Variables (Factors)
+require(ggplot2)        # Generar gráficos ggplot y la geometría de un mapa
+require(ggthemes)       # Extra Themes, scale and Geoms for ggplot2
+require(ggmap)          #Spatial Visualization with ggplot2 
+require(ggpubr)         # Based Publication Ready Plots with ggplot2
+require(ggimage)        # Plot images
+require(grDevices)      # Read vector files .svg
+require(knitr)
+require(kableExtra)
+require(lubridate)
+library(maptools)
+require(openxlsx)
+require(readxl)
+require(RColorBrewer)   #ColorBrewer Palettes 
+require(rgdal)          #Para importar shapefiles. 
+require(sp)             # Classes and Methos for Spatial Data
+library(spdep)    # Índice de Moran 
+require(spdplyr)        #Data manipulation verbs for the sptial classes
+require(tidyverse) 
+require(tmap)
+require(tmaptools)
+require(tibble)
+require(unikn)          # Paleta de colores
+require(viridisLite)    # Paleta de colores
+```
+
+
+```{r, echo = FALSE}
+# Se descargan las fuentes de la google fonts
+require(showtext)
+# activar showtext
+showtext_auto()
+font_add_google("Montserrat", "montserrat")
+```
+
+
+
+## Objetivo
+
+El análisis espacial es un conjunto de técnicas y herramientas utilizadas para estudiar y comprender patrones, relaciones y procesos geográficos en un contexto espacial. Es decir, se enfoca en cómo los datos se distribuyen en el espacio y cómo se relacionan entre sí, en el cúal se utilizan técnicas como el mapeo, estadística espacial, sistemas de información geográfica (SIG) y la visualización para examinar los datos geográficos y descubrir patrones y relaciones en ellos. 
+
+Estas técnicas permiten la detección de patrones y tendencias, la evaluación de la accesibilidad y la conectividad, la modelización de procesos geográficos y la planificación y toma de decisiones basadas en la información geográfica. La cuales sirven como ayuda para campos, como la geografía, planificación urbana, epidemiología, gestión de recursos naturales, criminología y arqueología, entre otros.    
+
+
+## Shapefile 
+
+La función `readOGR` del paquete `rgdal`, extrae automáticamente la información utilizada por otros paquetes `SIG` de código abierto como QGIS y permite a R manejar una gama más amplia de formatos de datos espaciales. Esta función lee datos `OGR` y datos vectoriales, pero solamente permite manejar capas con características geométricas (no mezcla puntos, líneas o polígonos en una sola capa) y a su vez establecerá un sistema de referencia espacial si la capa tiene dichos metadatos.       
+Para leer un archivo `shapefile`, se establecen los siguientes argumentos, como `dsn`, en donde se indica el directorio que contiene los shapes y `layer` que es el nombre explícito de la capa a trabajar y dichas capas deben de ir sin la extensión `.shp`.   
+
+A continuación,  se lee el archivo .shp que contiene de manera integrada la división de el área geoestadística municipal `agem`.
+
+```{r,results=FALSE,class.source = "fold-show"}
+shape_estados <- readOGR(dsn ="D:/MGN/MGN 2020/MGN 2020/conjunto_de_datos", 
+                             layer = "00ent",
+                              encoding = "UTF-8",
+                               use_iconv = TRUE)
+```
+
+```{r,results=FALSE,class.source = "fold-show"}
+shape_municipios <- readOGR(dsn ="D:/MGN/MGN 2020/MGN 2020/conjunto_de_datos", 
+                             layer = "00mun",
+                              encoding = "UTF-8",
+                               use_iconv = TRUE)
+```
+
+La función `rename()` del paquete `dplyr` permite cambiar el nombre de la columna de la clave geoestadística a nivel estatal dentro de la base de datos del shape.        
+
+```{r,class.source = "fold-show"}
+shape_municipios@data <- shape_municipios@data %>%
+                          rename("CVE_GEO" = "CVEGEO")
+```
+
+
+### Conjunto de datos 
+
+
+La base de datos del índice de marginación por municipios se encuentra disponible en la página oficial de [CONAPO]( https://www.gob.mx/conapo/documentos/indices-de-marginacion-2020-284372) o bien se puede consultar en la página de [Datos Abiertos](https://datos.gob.mx/) y se presenta en formato `.xlsx` [Consulta](https://datos.gob.mx/busca/dataset/indice-de-marginacion-carencias-poblacionales-por-localidad-municipio-y-entidad).     
+
+Para poder trabajar con la base de datos del índice de marginación a nivel municipal, se elimina la fila que contiene los datos a nivel nacional con la función `::filter()` del paquete `dplyr` y  por otro lado se cambia el nombre de la columna `CVE_MUN`  que hace referencia a la clave geográfica del municipio por `CVE_GEO` para fines prácticos.     
+
+```{r, class.source = "fold-show"}
+IMM_2020 <- read_xlsx("Bases/IMM_2020.xlsx", sheet = "IMM_2020") %>%
+             filter(NOM_ENT != "Nacional") %>%
+               mutate(CVE_GEO = CVE_MUN) %>%
+                as.data.frame()
+```
+
+
+#### SpatialPolygons
+
+##### $$SpatialPolygons \Rightarrow SpatialPolygons + Datos$$    
+
+```{r, class.source = "fold-show"}
+layer_municipios <- merge(shape_municipios,
+                           IMM_2020 %>% dplyr::select(c(-CVE_ENT, -CVE_MUN)) %>%
+                                         mutate(GM_2020 = fct_relevel(.$GM_2020,"Muy alto", "Alto", "Medio", "Bajo", "Muy bajo")),
+                            by = "CVE_GEO")
+```
+
+
+
+```{r, fig.height=8, fig.width=10}
+# Paleta de colores 
+require(RColorBrewer)
+require(ggspatial)
+
+p <- ggplot() + 
+      layer_spatial(layer_municipios, aes(fill = IM_2020), color = "transparent") + 
+       layer_spatial(shape_estados, fill = "transparent", color = "black") + 
+       theme_bw() + 
+        theme(plot.title = element_text(size = 22, hjust = 0.15, family = "montserrat", face = "bold"),
+               plot.caption = element_text(size = 11, hjust = 0.2, vjust = 1, family = "montserrat"), 
+                legend.key.size = unit(0.5, "cm"),
+                 legend.text = element_text(size = 12, family = "montserrat"), 
+                  legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
+                   legend.position = c(0.8, 0.7)) + 
+            scale_fill_viridis_c(option = "A", begin = 0.3, end = 1) +
+           #scale_color_manual(values = c("#BDBDBD")) + 
+            guides(color = guide_legend(override.aes = list(fill = usecol(pal = pal_petrol, n = 5)))) +
+     labs(title = "Índice de marginación a nivel municipal, 2020",
+           fill = stringr::str_wrap("Grado de marginación", 10), 
+            caption = expression(paste("Fuentes: Estimaciones del CONAPO con base en el INEGI, Censo de Población y Vivienda 2020")))
+p
+```
+
+
+## Extraemos las coordenadas
+Además, extraemos las coordenadas $(x,y)$ de la base de datos espacial y la almacenamos en la variable coords, para su posterior uso en el código.
+
+
+```{r}
+# Extrayendo coordenadas desde la base de datos espaciales.
+coords = coordinates(layer_municipios)
+```
+
+
+## Tipos de distancias
+
+Se crea una la lista de vecinos usando el criterio de continuidad tipo reina `(QUEEN)`, torre `(ROOK)` y K-Vecinos `(KN-4)`   
+
+`poly2nb` : Se construye una lista de vecinos a partir de una lista de polígonos):   
+
+La función crea una lista de vecinos basada en regiones con límites contiguos, que comparten uno o más puntos de límites.
+
+- La condición de contiüidad se cumple cuando al menos un punto en el límite de un polígono está dentro de la distancia de ajuste de al menos un punto de su vecino. Esta relación viene dada por el argumento `QUEEN = TRUE`.  
+
+- Si `QUEEN = FALSE`, al menos dos puntos límite deben estar dentro de la distancia de ataque entre sí, con el nombre convencional de una relación de `ROOK`.   
+
+
+`knn2nb`: Genera una lista de vecinos del objeto `Knn`.  
+ 
+La función convierte un objeto `knn` devuelto por knearneigh en una lista de vecinos de clase `nb` con una lista de vectores enteros que contienen ID de números de regiones vecinas.  
+
+- `knearneig`: $K-Vecinos$ más cercanos para pesos espaciales.  La función devuelve una matriz con los índices de puntos pertenecientes al conjunto de los k vecinos más cercanos entre sí.   
+
+```{r}
+# Construyendo lista de vecinos con criterio tipo reina
+X_nb_queen = poly2nb(layer_municipios, queen = TRUE)  
+
+# Construyendo lista de vecinos con criterio  tipo torre
+X_nb_rook = poly2nb(layer_municipios, queen = FALSE) 
+
+# Construyendo lista de vecinos con k-vecinos más cercanos
+IDs = row.names(as(layer_municipios, "data.frame")) # Id de las filas
+X_kn4 = knn2nb(knearneigh(coords, k=4), row.names=IDs) 
+```
+
+
+**Mostrando resultados**  
+
+```{r}
+X_nb_queen
+X_nb_rook
+X_kn4
+```
+
+
+
+## Ponderaciones
+
+Construcción de la matriz de ponderaciones espacial (asignar pesos a las áreas que están vinculadas)   
+
+Para considerar la estructura de vecindad y los efectos espaciales en la estimación de los parámetros se especifica una matriz cuadrada (`W`) denominada matriz de pesos o matriz de ponderaciones, cuyos elementos no negativos dan evidencia de la intensidad de la interdependencia existente entre cada par de unidades geográficas $i$ y $j$.    
+
+`nb2listw` (Pesos espaciales para listas de vecinos): Complementa una lista de vecinos con pesos espaciales para el esquema de codificación elegido.
+
+
+```{r}
+#   Matriz de pesos normalizados en fila 
+# usando QUEEN(W) (Tipo reina):
+X_nbq_w = nb2listw(X_nb_queen)
+X_nbq_w
+```
+
+
+```{r}
+#   Matriz de pesos normalizados en fila 
+# usando ROOK(W) (Tipo torre):
+X_nbr_w = nb2listw(X_nb_rook)
+X_nbr_w
+```
+
+
+```{r}
+#   Matriz de pesos normalizados en fila usando k = 4(W):
+X_kn4_w = nb2listw(X_kn4)
+X_kn4_w
+```
+
+
+Resumen estadístico de la matriz de pesos para cada criterio  
+
+```{r}
+summary(unlist(X_nbq_w$weights))  # Criterio reina
+```
+
+
+```{r}
+summary(unlist(X_nbr_w$weights))  # Criterio torre
+```
+
+
+```{r}
+summary(unlist(X_kn4_w$weights))  # Criterio k-vecinos
+```
+
+
+# Índice de Moran:
+
+Evaluando existencia de autocorrelación espacial
+
+$𝐼$ toma valores entre -1 y 1. Valores cercanos a 1 implican dependencia espacial positiva (valores vecinos similares) y valores cercanos a -1 implican dependencia espacial negativa (valores vecinos diferentes). Valores cercanos a cero implican no autocorrelación espacial.
+
+`moran.test`: (Prueba I de Moran para autocorrelación espacial) Utiliza una matriz de ponderaciones espaciales en forma de lista de ponderaciones. La opción alternativa especifica la hipótesis alternativa, debe ser mayor (predeterminado), menor o como en este caso, bilateral (two.side).
+
+
+
+```{r}
+# Primero usamos tipo reina:
+Ind_Moran_reina = moran.test(layer_municipios$IM_2020, listw = X_nbq_w, 
+                             alternative = "two.side")
+
+# Luego tipo torre
+Ind_Moran_torre = moran.test(layer_municipios$IM_2020, listw = X_nbr_w, 
+                             alternative = "two.side")
+
+# Ahora, usamos k = 4:
+Ind_Moran_k = moran.test(layer_municipios$IM_2020, listw = X_kn4_w, 
+                         alternative = "two.side") 
+prueba <- moran(layer_municipios$IM_2020, listw = X_nbq_w, length(X_nbq_w), Szero(X_nbq_w))
+```
+
+**Conclusión**: Por lo que los valores se acercan más a 1, significa la existencia de autocorrelación espacial positiva.
+
+Recordemos La autocorrelación espacial positiva se presenta cuando valores altos [bajos] de la variable de estudio en una localización están asociados con valores altos [bajos] en las regiones vecinas.
+De manera que la tasa de pobreza en los diferentes puntos se va a presentar de forma similar y esto afirma la posible existencia de clústeres.
+
+### Prueba del estadístico I de Moran    
+
+Se calcula un pseudo valor p determinando, la proporción de los valores I de Moran local generados a partir de permutaciones que muestran más agrupaciones que los datos originales. Si esta proporción (el pseudo valor p) es pequeña (menos de 0.05), puede concluir que sus datos muestran agrupaciones estadísticamente significativas.   
+
+`moran.mc`: Esta es una prueba de permutación para el estadístico I de Moran calculado usando permutaciones aleatorias, para establecer el rango del estadístico observado en relación con los nsim valores simulados.  
+
+```{r}
+moran.mc(layer_municipios$IM_2020, listw = X_nbq_w, nsim=999) # Reina
+```
+
+```{r}
+moran.mc(layer_municipios$IM_2020, listw = X_nbr_w, nsim=999) # Torre
+```
+
+
+```{r}
+moran.mc(layer_municipios$IM_2020, listw = X_kn4_w, nsim=999) # K-vecinos
+```
+
+
+Dado que el p-value para cada método o criterio es igual a 0.001, y este valor es menor a 0.05, significa que se muestran agrupaciones estadísticamente significativas.
+
+
+# Prueba C de Geary:  
+
+El índice de Geary (`C`) es un índice de comparaciones por pares entre las diferentes zonas; por lo general varía entre 0 y 2. 
+- Un valor de $1$ indica ausencia de autocorrelación, es decir, que los valores de una zona no están relacionados con los valores de zonas cercanas.
+- Los valores inferiores a $<1$ indican autocorrelación espacial positiva,
+- Mientras que valores superiores a $>1$ indican autocorrelación espacial negativa (Griffith, 1987).    
+
+`geary.test`: (Prueba `C` de Geary para autocorrelación espacial) Utiliza una matriz de ponderaciones espaciales en forma de lista de ponderaciones. La opción alternativa especifica la hipótesis alternativa, debe ser mayor (predeterminado), menor o como en este caso, bilateral (two.side).   
+
+
+```{r}
+# Primero usamos tipo reina:
+C_Geary_reina = geary.test(layer_municipios$IM_2020, listw = X_nbq_w, 
+                             alternative = "two.side")
+
+# Luego tipo torre
+C_Geary_torre = geary.test(layer_municipios$IM_2020, listw = X_nbr_w, 
+                             alternative = "two.side")
+
+# Ahora, usamos k = 4:
+C_Geary_k = geary.test(layer_municipios$IM_2020, listw = X_kn4_w, 
+                         alternative = "two.side") 
+```
+
+
+Resultados
+
+```{r}
+C_Geary_reina
+```
+
+```{r}
+C_Geary_torre
+```
+
+```{r}
+C_Geary_k
+```
+
+Observamos el C de Geary para:
+
+* Criterio reina: C =0.3795
+* Criterio torre: C = 0.3772
+* k-vecinos: C = 0.4074
+
+Conclusión Por lo que los valores son menores que 1, confirma la existencia de autocorrelación espacial positiva.
+
+## Prueba del estadístico C de geary  
+
+`geary.mc`: Esta es una prueba de permutación para el estadístico C de Geary calculado usando permutaciones aleatorias.  
+
+```{r}
+geary.mc(layer_municipios$IM_2020, listw = X_nbq_w, nsim = 999) # Reina
+```
+
+```{r}
+geary.mc(layer_municipios$IM_2020, listw = X_nbr_w, nsim = 999) # Torre
+```
+
+```{r}
+geary.mc(layer_municipios$IM_2020, listw = X_kn4_w, nsim = 999) # K-vecinos
+```
+
+Dado que el p-value para cada método o criterio es igual a 0.001, y este valor es menor a 0.05, significa que se muestran agrupaciones estadísticamente significativas.  
+
+
+# Prueba G(d) de Getis y Ord 
+
+globalG.test: La estadística G global para la autocorrelación espacial, que complementa las medidas locales de Gi LISA: localG..  
+
+
+```{r}
+# Ahora, usando k = 4:
+G_Getis_k = globalG.test(layer_municipios$IM_2020, listw = X_kn4_w, 
+                         alternative = "two.side") 
+G_Getis_k
+```
+
+#  Representación gráfica de la dependencia espacial  
+
+n gráfico de dispersión que permite analizar la autocorrelación espacial global, es el denominado **Scatterplot de Moran univariante (Anselin, 1993)** .   
+Este gráfico se construye en un plano cartesiano, en el eje de abscisas se ubican los valores de la variable de estudio estandarizada (x), y en el eje de ordenadas, se ubican los valores del retardo espacial de la variable estandarizada. Entiéndase por retardo espacial de una unidad espacial $i$, al valor medio de todos los valores de la variable estandarizada correspondientes a las unidades espaciales vecinas de $i$.    
+
+
+Si la nube de puntos tiende a formarse sobre la diagonal principal del plano cartesiano (cuadrante I y III, en contra de las manecillas de reloj), esto nos indicará la presencia de autocorrelación espacial positiva.   
+
+Si la nube de puntos tiende a ubicarse sobre la diagonal secundaria del plano cartesiano (cuadrante II y IV, en contra de las manecillas de reloj) , será un indicio de existencia de autocorrelación espacial negativa.    
+
+De lo contrario, si la nube de puntos de distribuye sobre los cuatro cuadrantes, esto nos indicará ausencia de autocorrelación espacial.   
+
+`moran.plot`: (Diagrama de dispersión de Moran) Una gráfica de datos espaciales frente a sus valores espaciales rezagados, aumentada al informar el resumen de las medidas de influencia para la relación lineal entre los datos y el rezago.      
+
+
+```{r}
+scatterplot_moran = moran.plot(layer_municipios$IM_2020, listw = X_kn4_w, main = "Scatterplot de Moran para la pobreza", labels = unique(IMM_2020$CVE_MUN))
+```
+Dado que la nube de puntos tiende a formarse sobre la diagonal principal del plano cartesiano (cuadrante I y III), esto indica la presencia de autocorrelación espacial positiva.  
+
+
+# Prueba de presencia de autocorrelación espacial (local):  
+
+Anselin (1995) se refirió a esto como una estadística “LISA”, para Indicador local de autocorrelación espacial.   
+
+`localmoran`: La estadística local espacial I de Moran se calcula para cada zona en función del objeto de ponderaciones espaciales.   
+   
+`lag.listw`: Usando una representación dispersa de listw de una matriz de ponderaciones espaciales, calcula el vector de retardo.   
+
+```{r}
+criterio <- X_nbq_w
+LISA <- function(criterio) {
+  
+          P = localmoran(layer_municipios$IM_2020, listw = criterio)
+          cX = layer_municipios$IM_2020 - mean(layer_municipios$IM_2020) # IM - Media(IM)
+          lagDV = lag.listw(X_nbq_w, layer_municipios$IM_2020) # Calcula el retardo (promedios)
+          clagDV = lagDV - mean(lagDV) # Retardo - Media(Retardo)
+          p = P[,5] # Toma la columna: Pr(z > 0) de P
+        
+          # Se inicializa vector numerico de longitud filas de P (666)
+          quadrant = vector(mode="numeric",length=nrow(P))+5
+          quadrant[cX>0 & clagDV>0 & p<= 0.05] = 1 # Alto-Alto
+          quadrant[cX<0 & clagDV<0 & p<= 0.05] = 2 # Bajo-Bajo
+          quadrant[cX<0 & clagDV>0 & p<= 0.05] = 3 # Bajo-Alto
+          quadrant[cX>0 & clagDV<0 & p<= 0.05] = 4 # Alto-Bajo
+        
+          # Grafico  
+          brks = c(1,2,3,4,5)
+          colors = c("red", "blue", "light blue", "pink", "white")
+          plot(layer_municipios, border ="lightgray", col=colors[findInterval(quadrant,brks,all.inside=FALSE)])
+          legend("bottomright", legend = c("High-High", "Low-Low", "Low-High", "High-Low", "Insignificant"), fill = colors, bty="n", cex=0.7, y.intersp=1, x.intersp=1)
+          box()
+          title("LISA Cluster Map")
+}
+```
+
+
+```{r}
+LISA(criterio = X_nbq_w)
+```
+
+```{r, eval = FALSE}
+tabla <- read.delim("C:/Users/dvill/Downloads/2022_12_3_00/2022_12_3_00.txt", sep = "\t", fill = TRUE , header = TRUE, quote = "\"")
+
+require(Rcmdr)
+
+
+#library(data.table)
+#setDT(df)[, observacion_izquierda := shift(observacion, n = 1, fill = NA, type = "lead")]
+```
+
+# Librerías  
+
+**Librerías que se usaron en el trabajo**    
+
+```{r, echo = FALSE}
+names(sessionInfo()$otherPkgs)
+```
+
+
+# Referencias  
+
+Datos Abiertos de México - Índice de marginación (carencias poblacionales) por localidad, municipio y entidad. (2021). Retrieved February 13, 2022, from https://datos.gob.mx/busca/dataset/indice-de-marginacion-carencias-poblacionales-por-localidad-municipio-y-entidad    
+ 
