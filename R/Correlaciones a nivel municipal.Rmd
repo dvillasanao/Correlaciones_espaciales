@@ -1,5 +1,6 @@
 ---
-title: "Análisis geoespacial a nivel municipal"
+title: "Análisis estadístico espacial"
+subtitle: "Utilizando el índice de marginación a nivel municipal"
 author: "Diana Villasana Ocampo"
 knit: (function(inputFile, encoding) {
        rmarkdown::render(inputFile, encoding = encoding, output_dir = "Output/")
@@ -38,6 +39,7 @@ h3 {
 }
 </style>
 ```
+
 ```{=html}
 <style>
 .nav>li>a {
@@ -52,6 +54,7 @@ h3 {
 }
 </style>
 ```
+
 ```{=html}
 <style>
 .tile1-text {
@@ -67,6 +70,7 @@ h3 {
 }
 </style>
 ```
+
 ```{=html}
 <style>
 .tile2-text {
@@ -83,7 +87,6 @@ h3 {
 </style>
 ```
 
-
 ```{=html}
 <style>
 .math {
@@ -97,7 +100,7 @@ h3 {
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = TRUE, 
-                      cache.lazy = FALSE, class.source = "fold-hide")
+                      cache.lazy = FALSE, class.source = "fold-show")
 knitr::opts_knit$set(root.dir = here::here())
 setwd(here::here())
 ```
@@ -149,7 +152,111 @@ El análisis espacial es un conjunto de técnicas y herramientas utilizadas para
 
 Estas técnicas permiten la detección de patrones y tendencias, la evaluación de la accesibilidad y la conectividad, la modelización de procesos geográficos y la planificación y toma de decisiones basadas en la información geográfica. La cuales sirven como ayuda para campos, como la geografía, planificación urbana, epidemiología, gestión de recursos naturales, criminología y arqueología, entre otros.
 
-## Shapefile
+## Correlaciones espaciales
+
+Las correlaciones espaciales permiten analizar la relación entre variables geográficas considerando su distribución en el espacio. A diferencia de las correlaciones tradicionales, que suponen independencia entre observaciones, las correlaciones espaciales reconocen que valores cercanos tienden a estar más relacionados que aquellos más alejados, fenómeno conocido como autocorrelación espacial. Este tipo de análisis es fundamental en estudios de patrones geográficos, como la distribución de la pobreza, el acceso a servicios o la dinámica migratoria, y se mide comúnmente mediante indicadores como el índice de Moran o la estadística de Geary. Su aplicación ayuda a identificar clusters espaciales, entender dinámicas territoriales y mejorar la toma de decisiones en políticas públicas y planificación urbana.
+
+El cálculo de la correlación espacial se basa en la relación entre los valores de una variable y su distribución geográfica. Los métodos más utilizados son el **Índice de Moran** y la **estadística de Geary**, que cuantifican la autocorrelación espacial en diferentes escalas.
+
+### 1. Índice de Moran ($I$)
+
+El **Índice de Moran** mide la autocorrelación espacial global, es decir, qué tan similar es una variable en función de su ubicación. Se calcula como:
+
+$$
+I = \frac{N}{W} \times \frac{\sum_{i} \sum_{j} w_{ij} (x_i - \bar{x})(x_j - \bar{x})}{\sum_{i} (x_i - \bar{x})^2}, \quad D = \left\{x \in [-1, 1] \right\}
+$$
+
+donde:
+
+\- $N$ es el número total de observaciones,
+
+\- $x_i$ y $x_j$ son los valores de la variable en las ubicaciones $i$ y $j$,
+
+\- $\bar{x}$ es la media de la variable,
+
+\- $w_{ij}$ es la matriz de pesos espaciales que define la relación entre ubicaciones (por ejemplo, vecindad contigua o distancia),
+
+\- $W$ es la suma de todos los pesos espaciales.
+
+El **Índice de Moran** varía entre $-1$ y $1$:
+
+\- $I > 0$ indica correlación positiva (valores similares están agrupados).
+
+\- $I < 0$ indica correlación negativa (valores diferentes están cercanos entre sí).
+
+\- $I \approx 0$ sugiere ausencia de autocorrelación espacial.
+
+### 2. Estadística de Geary ($C$)
+
+La estadística de Geary también mide autocorrelación espacial, pero es más sensible a las diferencias locales. Se calcula como:
+
+$$
+C = \frac{(N-1)}{2W} \times \frac{\sum_{i} \sum_{j} w_{ij} (x_i - x_j)^2}{\sum_{i} (x_i - \bar{x})^2}
+$$
+
+donde los términos son los mismos que en el Índice de Moran.
+
+El **valor de** $C$ varía entre $0$ y $2$:
+
+\- $C \approx 1$ indica independencia espacial (ausencia de correlación).
+
+\- $C < 1$ sugiere autocorrelación espacial positiva (valores similares están cerca).
+
+\- $C > 1$ indica autocorrelación espacial negativa (valores diferentes están cercanos entre sí).
+
+### 3. Estadística de Getis-Ord ($G_i^*$)
+
+La estadística de **Getis-Ord** $G_i^*$ es una medida local de autocorrelación espacial que identifica clusters de valores altos o bajos en una distribución geográfica. Se usa principalmente para detectar **zonas calientes ("hot spots") y zonas frías ("cold spots")**, lo que la hace útil en análisis de crimen, salud pública, economía y planificación urbana.
+
+#### Fórmula de Getis-Ord $G_i^*$:
+
+$$
+G_i^* = \frac{\sum_{j} w_{ij} x_j}{\sum_{j} x_j}
+$$
+
+donde:\
+- $x_j$ es el valor de la variable en la ubicación $j$,
+
+\- $w_{ij}$ es el peso espacial entre las ubicaciones $i$ y $j$,
+
+\- $\sum_{j} x_j$ es la suma total de la variable en todas las ubicaciones.
+
+Para interpretar los resultados, se suele estandarizar $G_i^*$ en forma de una puntuación $Z$:
+
+$$
+Z(G_i^*) = \frac{\sum_j w_{ij} x_j - \bar{X} W_i}{S}
+$$
+
+donde:
+
+\- $\bar{X}$ es la media de la variable en toda el área de estudio,
+
+\- $W_i$ es la suma de los pesos espaciales para la ubicación $i$,
+
+\- $S$ es la desviación estándar de la variable en la región.
+
+#### Interpretación de $G_i^*$:
+
+-   $Z(G_i^*) > 1.96$ (p \< 0.05) → Indica un **hot spot** (zona con valores altos agrupados significativamente).\
+-   $Z(G_i^*) < -1.96$ (p \< 0.05) → Indica un **cold spot** (zona con valores bajos agrupados significativamente).\
+-   $Z(G_i^*) \approx 0$ → No hay patrones espaciales significativos.
+
+
+#### **Diferencia con el Índice de Moran:**
+
+-   **Moran’s I** mide la autocorrelación espacial **global**, indicando si los valores están agrupados en toda la región.\
+-   **Getis-Ord** $G_i^*$ detecta **clusters locales**, permitiendo identificar áreas específicas con concentraciones altas o bajas.
+
+#### **Aplicaciones:**
+
+-   En criminología, para encontrar **zonas de alta delincuencia**.\
+-   En epidemiología, para detectar **zonas con alta incidencia de enfermedades**.\
+-   En economía, para analizar **concentraciones de riqueza o pobreza**.\
+-   En urbanismo, para identificar **áreas de crecimiento acelerado o deterioro urbano**.
+
+Esta estadística es ampliamente utilizada en **Sistemas de Información Geográfica (SIG)** y está implementada en software como **ArcGIS, GeoDa y R** (paquetes `spdep` y `sf`).
+
+### Shapefile
 
 La función `readOGR` del paquete `rgdal`, extrae automáticamente la información utilizada por otros paquetes `SIG` de código abierto como QGIS y permite a R manejar una gama más amplia de formatos de datos espaciales. Esta función lee datos `OGR` y datos vectoriales, pero solamente permite manejar capas con características geométricas (no mezcla puntos, líneas o polígonos en una sola capa) y a su vez establecerá un sistema de referencia espacial si la capa tiene dichos metadatos.\
 Para leer un archivo `shapefile`, se establecen los siguientes argumentos, como `dsn`, en donde se indica el directorio que contiene los shapes y `layer` que es el nombre explícito de la capa a trabajar y dichas capas deben de ir sin la extensión `.shp`.
@@ -201,7 +308,7 @@ layer_municipios <- merge(shape_municipios,
                             by = "CVE_GEO")
 ```
 
-```{r, fig.height=8, fig.width=10}
+```{r,fig.height=8, fig.width=10, eval = FALSE, class.source = "fold-hide"}
 # Paleta de colores 
 require(RColorBrewer)
 require(ggspatial)
@@ -314,7 +421,7 @@ summary(unlist(X_nbr_w$weights))  # Criterio torre
 summary(unlist(X_kn4_w$weights))  # Criterio k-vecinos
 ```
 
-# Índice de Moran:
+## Índice de Moran:
 
 Evaluando existencia de autocorrelación espacial
 
@@ -361,7 +468,7 @@ moran.mc(layer_municipios$IM_2020, listw = X_kn4_w, nsim=999) # K-vecinos
 
 Dado que el p-value para cada método o criterio es igual a 0.001, y este valor es menor a 0.05, significa que se muestran agrupaciones estadísticamente significativas.
 
-# Prueba C de Geary:
+## Prueba C de Geary:
 
 El índice de Geary (`C`) es un índice de comparaciones por pares entre las diferentes zonas; por lo general varía entre 0 y 2. - Un valor de $1$ indica ausencia de autocorrelación, es decir, que los valores de una zona no están relacionados con los valores de zonas cercanas. - Los valores inferiores a $<1$ indican autocorrelación espacial positiva, - Mientras que valores superiores a $>1$ indican autocorrelación espacial negativa (Griffith, 1987).
 
@@ -421,7 +528,7 @@ geary.mc(layer_municipios$IM_2020, listw = X_kn4_w, nsim = 999) # K-vecinos
 
 Dado que el p-value para cada método o criterio es igual a 0.001, y este valor es menor a 0.05, significa que se muestran agrupaciones estadísticamente significativas.
 
-# Prueba G(d) de Getis y Ord
+## Prueba G(d) de Getis y Ord
 
 globalG.test: La estadística G global para la autocorrelación espacial, que complementa las medidas locales de Gi LISA: localG..
 
@@ -432,7 +539,7 @@ G_Getis_k = globalG.test(layer_municipios$IM_2020, listw = X_kn4_w,
 G_Getis_k
 ```
 
-# Representación gráfica de la dependencia espacial
+## Representación gráfica de la dependencia espacial
 
 n gráfico de dispersión que permite analizar la autocorrelación espacial global, es el denominado **Scatterplot de Moran univariante (Anselin, 1993)** .\
 Este gráfico se construye en un plano cartesiano, en el eje de abscisas se ubican los valores de la variable de estudio estandarizada (x), y en el eje de ordenadas, se ubican los valores del retardo espacial de la variable estandarizada. Entiéndase por retardo espacial de una unidad espacial $i$, al valor medio de todos los valores de la variable estandarizada correspondientes a las unidades espaciales vecinas de $i$.
@@ -451,7 +558,7 @@ scatterplot_moran = moran.plot(layer_municipios$IM_2020, listw = X_kn4_w, main =
 
 Dado que la nube de puntos tiende a formarse sobre la diagonal principal del plano cartesiano (cuadrante I y III), esto indica la presencia de autocorrelación espacial positiva.
 
-# Prueba de presencia de autocorrelación espacial (local):
+## Prueba de presencia de autocorrelación espacial (local):
 
 Anselin (1995) se refirió a esto como una estadística “LISA”, para Indicador local de autocorrelación espacial.
 
@@ -500,7 +607,7 @@ require(Rcmdr)
 #setDT(df)[, observacion_izquierda := shift(observacion, n = 1, fill = NA, type = "lead")]
 ```
 
-# Librerías
+## Librerías
 
 **Librerías que se usaron en el trabajo**
 
@@ -508,6 +615,12 @@ require(Rcmdr)
 names(sessionInfo()$otherPkgs)
 ```
 
-# Referencias
+## Referencias
 
-Datos Abiertos de México - Índice de marginación (carencias poblacionales) por localidad, municipio y entidad. (2021). Retrieved February 13, 2022, from <https://datos.gob.mx/busca/dataset/indice-de-marginacion-carencias-poblacionales-por-localidad-municipio-y-entidad>
+Anselin, L. (1995). Local Indicators of Spatial Association—LISA. Geographical Analysis, 27(2), 93–115.   
+
+Datos Abiertos de México - Índice de marginación (carencias poblacionales) por localidad, municipio y entidad. (2021). Retrieved February 13, 2022, from <https://datos.gob.mx/busca/dataset/indice-de-marginacion-carencias-poblacionales-por-localidad-municipio-y-entidad>   
+
+Bivand, R. S., Pebesma, E., & Gómez-Rubio, V. (2013). Applied Spatial Data Analysis with R (2nd ed.). Springer.  
+
+RPubs - Spatial Clustering of Univariate Geographically Referenced Attribute. (2020). Retrieved January 30, 2025, from <https://rpubs.com/erikaaldisa/spatialclustering>   
