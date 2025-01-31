@@ -254,9 +254,25 @@ donde:
 -   En economía, para analizar **concentraciones de riqueza o pobreza**.\
 -   En urbanismo, para identificar **áreas de crecimiento acelerado o deterioro urbano**.
 
-Esta estadística es ampliamente utilizada en **Sistemas de Información Geográfica (SIG)** y está implementada en software como **ArcGIS, GeoDa y R** (paquetes `spdep` y `sf`).
+Esta estadística es ampliamente utilizada en **Sistemas de Información Geográfica (SIG)** y está implementada en software como **ArcGIS, GeoDa y R** (paquetes `spdep` y `sf`).   
 
-### Shapefile
+
+## Marco Geoestadístico Nacional (MGN) 2020    
+
+El **Marco Geoestadístico Nacional (MGN) 2020** del **Instituto Nacional de Estadística y Geografía (INEGI)** es un sistema de referencia geográfica que define la división territorial de México para la recopilación, análisis y presentación de información estadística. Se utiliza principalmente en censos y encuestas para garantizar la compatibilidad de datos espaciales a nivel nacional.
+
+#### **Características principales del MGN 2020:**
+1. **Unidades geográficas:**  
+   - **Áreas Geoestadísticas Estatales (AGEE):** corresponden a los estados.  
+   - **Áreas Geoestadísticas Municipales (AGEM):** coinciden con los municipios.  
+   - **Áreas Geoestadísticas Básicas (AGEB):** subdivisiones de los municipios, utilizadas en zonas urbanas y rurales.  
+   - **Manzanas geoestadísticas:** delimitaciones dentro de las AGEB urbanas.  
+
+2. **Proyección y sistema de coordenadas:**  
+   - Utiliza el **Sistema de Referencia Geodésico ITRF2008** en coordenadas geográficas con el **datum WGS84**.  
+   - Se presenta en formato vectorial compatible con SIG (Sistemas de Información Geográfica), en formatos como **Shapefile (SHP)** y **GeoJSON**.  
+
+#### Shapefile
 
 La función `readOGR` del paquete `rgdal`, extrae automáticamente la información utilizada por otros paquetes `SIG` de código abierto como QGIS y permite a R manejar una gama más amplia de formatos de datos espaciales. Esta función lee datos `OGR` y datos vectoriales, pero solamente permite manejar capas con características geométricas (no mezcla puntos, líneas o polígonos en una sola capa) y a su vez establecerá un sistema de referencia espacial si la capa tiene dichos metadatos.\
 Para leer un archivo `shapefile`, se establecen los siguientes argumentos, como `dsn`, en donde se indica el directorio que contiene los shapes y `layer` que es el nombre explícito de la capa a trabajar y dichas capas deben de ir sin la extensión `.shp`.
@@ -284,7 +300,7 @@ shape_municipios@data <- shape_municipios@data %>%
                           rename("CVE_GEO" = "CVEGEO")
 ```
 
-### Conjunto de datos
+### Base de datos
 
 La base de datos del índice de marginación por municipios se encuentra disponible en la página oficial de [CONAPO](https://www.gob.mx/conapo/documentos/indices-de-marginacion-2020-284372) o bien se puede consultar en la página de [Datos Abiertos](https://datos.gob.mx/) y se presenta en formato `.xlsx` [Consulta](https://datos.gob.mx/busca/dataset/indice-de-marginacion-carencias-poblacionales-por-localidad-municipio-y-entidad).
 
@@ -297,9 +313,11 @@ IMM_2020 <- read_xlsx("Bases/IMM_2020.xlsx", sheet = "IMM_2020") %>%
                 as.data.frame()
 ```
 
-#### SpatialPolygons
+### SpatialPolygons 
 
-##### $$SpatialPolygons \Rightarrow SpatialPolygons + Datos$$
+Se fusionan los datos del `shape_municipios` con datos estadísticos del índice de marginación a nivel municipal  (`IMM_2020`), excluyendo las claves estatales y municipales (`CVE_ENT`, `CVE_MUN`) y asegurando que `GM_2020` se ordene de acuerdo a los grados de marginación. El resultado es `layer_municipios`, un objeto que contiene a los municipios junto con sus atributos actualizados, lo que facilita su análisis y visualización en mapas.
+
+#### $$SpatialPolygons \Rightarrow SpatialPolygons + Datos$$
 
 ```{r, class.source = "fold-show"}
 layer_municipios <- merge(shape_municipios,
