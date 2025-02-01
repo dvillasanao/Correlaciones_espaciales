@@ -483,7 +483,7 @@ X_kn4
   | Método                           | Vecinos por municipio (promedio) | Total de enlaces | Relación simétrica |
   |----------------------------------|:------------------------------:|:----------------:|----------------------|
   | Regla de la Reina (`X_nb_queen`) | 5.84                           | 14,428           | ✅ Sí | |
-  | Regla del Torre (`X_nb_rook`)    | 5.75                           | 14,200           | ✅ Sí c|
+  | Regla del Torre (`X_nb_rook`)    | 5.75                           | 14,200           | ✅ Sí |
   | KNN con \( k = 4 \) (`X_kn4`)    | 4                              | 9,876            | ❌ No |             
 
 ## Ponderaciones
