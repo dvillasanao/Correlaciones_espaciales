@@ -350,32 +350,42 @@ p <- ggplot() +
 p
 ```
 
-## Extraemos las coordenadas
+## Centroides 
 
-Además, extraemos las coordenadas $(x,y)$ de la base de datos espacial y la almacenamos en la variable coords, para su posterior uso en el código.
+La función `coordinates()` extrae las coordenadas de los centroides de los polígonos en $(x,y)$ de la base de datos espacial y la almacenamos en la variable `coords`, para su posterior uso en el código.
 
 ```{r}
 # Extrayendo coordenadas desde la base de datos espaciales.
 coords = coordinates(layer_municipios)
 ```
 
-## Tipos de distancias
+## Tipos de distancias  
 
-Se crea una la lista de vecinos usando el criterio de continuidad tipo reina `(QUEEN)`, torre `(ROOK)` y K-Vecinos `(KN-4)`
+### **Reglas de Vecindad en Análisis Espacial**  
+  Existen dos reglas principales para definir vecindades espaciales:  
+  
+  1. **Regla de la Reina (Queen Contiguity, `queen = TRUE`)**  
+  - Considera que dos polígonos son vecinos si **comparten un vértice o un borde**.  
+- Es más inclusiva y útil para análisis de fenómenos continuos.  
 
-`poly2nb` : Se construye una lista de vecinos a partir de una lista de polígonos):
+2. **Regla de la Torre (Rook Contiguity, `queen = FALSE`)**  
+  - Solo considera vecinos a aquellos polígonos que **comparten un borde completo** (no solo un vértice).  
+- Es más restrictiva y útil cuando se analizan estructuras en cuadrículas.  
 
-La función crea una lista de vecinos basada en regiones con límites contiguos, que comparten uno o más puntos de límites.
+3. **structura de vecindad espacial basada en los $𝑘- vecinos$ más cercanos.**. Este método usa la distancia euclidiana en el espacio de coordenadas (latitud y longitud) para determinar los  $k$ vecinos más cercanos.    
 
--   La condición de contiüidad se cumple cuando al menos un punto en el límite de un polígono está dentro de la distancia de ajuste de al menos un punto de su vecino. Esta relación viene dada por el argumento `QUEEN = TRUE`.
 
--   Si `QUEEN = FALSE`, al menos dos puntos límite deben estar dentro de la distancia de ataque entre sí, con el nombre convencional de una relación de `ROOK`.
 
-`knn2nb`: Genera una lista de vecinos del objeto `Knn`.
-
-La función convierte un objeto `knn` devuelto por knearneigh en una lista de vecinos de clase `nb` con una lista de vectores enteros que contienen ID de números de regiones vecinas.
-
--   `knearneig`: $K-Vecinos$ más cercanos para pesos espaciales. La función devuelve una matriz con los índices de puntos pertenecientes al conjunto de los k vecinos más cercanos entre sí.
+ **Comparación con otros métodos de vecindad**  
+ 
+  | Método | Criterio de Vecindad | Tipo de Distancia |
+  |--------|----------------------|-------------------|
+  | `poly2nb(..., queen=TRUE)` | Regla de la Reina (borde o vértice) | Topológica |
+  | `poly2nb(..., queen=FALSE)` | Regla de la Torre (solo borde) | Topológica |
+  | `knn2nb(knearneigh(coords, k))` | \( k \) vecinos más cercanos | Euclidiana |
+  
+  
+![](../Output/correlaciones.png)
 
 ```{r}
 # Construyendo lista de vecinos con criterio tipo reina
