@@ -382,7 +382,7 @@ Existen dos reglas principales para definir vecindades espaciales:
 **Comparación con otros métodos de vecindad**
 
 | Método | Criterio de Vecindad | Tipo de Distancia |
-|----|----|----|
+|------------------|-----------------------------|-------------------------|
 | `poly2nb(..., queen=TRUE)` | Regla de la Reina (borde o vértice) | Topológica |
 | `poly2nb(..., queen=FALSE)` | Regla de la Torre (solo borde) | Topológica |
 | `knn2nb(knearneigh(coords, k))` | $k$ vecinos más cercanos | Euclidiana |
@@ -399,7 +399,7 @@ $$
 
 donde cada municipio se conecta con todos los demás **sin contar conexiones repetidas** (es decir, sin contar dos veces el mismo par de municipios).
 
-Para $n = 2469$ municipios en tu red:
+Para $n = 2469$ municipios en la red:
 
 $$
     \frac{2469 \times (2469 - 1)}{2} = \frac{2469 \times 2468}{2} = 3,045,846
@@ -422,19 +422,24 @@ El resultado describe la estructura de vecindad espacial generada usando la regl
 
 -   Se indica que hay 14428 enlaces espaciales no nulos entre los municipios. Un enlace no nulo significa que dos municipios son considerados vecinos según la regla de la reina (comparten un borde o vértice). En otras palabras, el número total de enlaces (14428) es relativamente pequeño en comparación con el número total de posibles enlaces (que sería mucho mayor si cada municipio estuviera conectado con todos los demás municipios).
 
--   Aproximadamente el 0.24% de los enlaces posibles entre los municipios son vecinos. Es decir, solo un pequeño porcentaje de los posibles pares de municipios están conectados por un enlace de vecindad.
+-   Aproximadamente el 24% de los enlaces posibles entre los municipios son vecinos. Es decir, solo un pequeño porcentaje de los posibles pares de municipios están conectados por un enlace de vecindad.
 
--   Cada municipio, en promedio, está conectado con aproximadamente 5.84 municipios vecinos. Es decir, la mayoría de los municipios tienen alrededor de 5-6 vecinos, pero hay algunos muy conectados (hasta 22 vecinos) y otros muy aislados (solo un vecino).
+-   Cada municipio, en promedio, está conectado con aproximadamente 5.84 municipios vecinos. Es decir, la mayoría de los municipios tienen alrededor de 5-6 vecinos, pero hay 3 municipios muy conectados (hasta 22 vecinos) y otros muy aislados (solo un vecino).
 
 **Comparación con el resultado actual**
 
 En la red de vecindad (con la regla de la reina), hay **14,428 enlaces**, lo que representa:
 
 $$
-    \frac{14,428}{3,045,846} \times 100 = 0.47\% 
+    \frac{14,428}{3,045,846} \times 100 = 0.47% 
     $$
 
 Solo **el 0.47% de los enlaces posibles existen**, lo que indica que la red de vecindad es muy **dispersa** en comparación con una red completamente conectada.
+
+
+### Rook contiguity
+
+`X_nb_rook` es una lista de vecindad espacial basada en la regla del torre (Rook Contiguity) en lugar de la regla de la reina, con el parámetro `queen = FALSE`.
 
 ```{r}
 # Construyendo lista de vecinos con criterio  tipo torre
@@ -442,12 +447,44 @@ X_nb_rook = poly2nb(layer_municipios, queen = FALSE)
 summary(X_nb_rook)
 ```
 
+📌 En comparación con `X_nb_queen`, esta red de vecindad tiene **menos enlaces**, lo que confirma que hay municipios que solo compartían vértices y que ahora no se consideran vecinos.
+
+-   Se indica que hay 14,200 conexiones entre municipios. Es un poco menor que en `X_nb_queen` (14,428 enlaces), lo que indica que se eliminaron enlaces que solo ocurrían en los vértices. 
+
+-   Aproximadamente el 23.29% de los pares posibles de municipios están conectados. Es decir, solo un pequeño porcentaje de los posibles pares de municipios están conectados por un enlace de vecindad.
+
+-   Cada municipio, en promedio, está conectado con aproximadamente 5.75 vecinos por municipio en promedio. Es decir, la mayoría de los municipios tienen alrededor de 5-6 vecinos, pero había 3 municipios con 22 enlaces. Ahora, solo hay 1 municipio con 22 enlaces. 
+- Esto indica que algunos municipios perdieron conexiones al aplicar la regla del torre, pero el municipio más conectado sigue teniendo el mismo número máximo de enlaces.   
+
+En la red de vecindad (con la regla de la torre), hay **14,200 enlaces**, lo que representa:
+
+$$
+    \frac{14,200}{3,045,846} \times 100 = 0.46% 
+    $$
+
+Solo **el 0.46% de los enlaces posibles existen**, lo que indica que la red de vecindad es muy **dispersa** en comparación con una red completamente conectada y menor al utilizar la regla de la torre.
+
+
+### k-neighbours contiguity  
+
+`X_kn4` se crea una lista de vecinos basada en la proximidad de coordenadas usando el método de los $k$ vecinos más cercanos (*k*-nearest neighbors, KNN) con $k = 4$.   
+
 ```{r}
 # Construyendo lista de vecinos con k-vecinos más cercanos
 IDs = row.names(as(layer_municipios, "data.frame")) # Id de las filas
 X_kn4 = knn2nb(knearneigh(coords, k = 4), row.names = IDs) 
 X_kn4
 ```
+
+
+
+  ### **📊 Comparación con `X_nb_queen` y `X_nb_rook`**   
+  
+  | Método                           | Vecinos por municipio (promedio) | Total de enlaces | Relación simétrica |
+  |----------------------------------|:------------------------------:|:----------------:|----------------------|
+  | Regla de la Reina (`X_nb_queen`) | 5.84                           | 14,428           | ✅ Sí | |
+  | Regla del Torre (`X_nb_rook`)    | 5.75                           | 14,200           | ✅ Sí c|
+  | KNN con \( k = 4 \) (`X_kn4`)    | 4                              | 9,876            | ❌ No |             
 
 ## Ponderaciones
 
