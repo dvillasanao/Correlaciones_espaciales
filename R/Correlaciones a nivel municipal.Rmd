@@ -509,14 +509,48 @@ Solo **el 0.40% de los enlaces posibles existen**, lo que indica que la red de v
 
 ## Ponderaciones
 
-Construcción de la matriz de ponderaciones espacial (asignar pesos a las áreas que están vinculadas)
+Construcción de la matriz de ponderaciones espacial (asignar pesos a las áreas que están vinculadas). Los pesos espaciales son clave para representar relaciones espaciales, mejorar análisis estadísticos y realizar predicciones más realistas en modelos geoespaciales. 
 
 Para considerar la estructura de vecindad y los efectos espaciales en la estimación de los parámetros se especifica una matriz cuadrada (`W`) denominada matriz de pesos o matriz de ponderaciones, cuyos elementos no negativos dan evidencia de la intensidad de la interdependencia existente entre cada par de unidades geográficas $i$ y $j$.
 
 `nb2listw` (Pesos espaciales para listas de vecinos): Complementa una lista de vecinos con pesos espaciales para el esquema de codificación elegido.
 
+Por defecto, `nb2listw()` asigna **pesos estandarizados por fila (row-standardized weights)**:  
+  \[
+    w_{ij} = \frac{1}{N_i}
+    \]
+donde \( N_i \) es el número de vecinos del municipio \( i \).  
+
+📌 **Esto significa que la suma de los pesos de cada fila es 1**, lo que ayuda a evitar que municipios con más vecinos dominen el análisis.
+
+---
+  
+### **🔹 Diferentes Estilos de Pesos**  
+
+Puedes cambiar el estilo de ponderación con el argumento `style`:
+  
+| Estilo (`style`) | Explicación |
+|------------------|-------------|
+| `"B"` (Binario) | 1 si son vecinos, 0 si no lo son |
+| `"W"` (Row-standardized, **default**) | Cada peso es \( 1 / N_i \) |
+| `"S"` (Suma de filas igual a 1) | Normaliza para evitar sesgos por diferencias en el número de vecinos |
+| `"U"` (Varianza unitaria) | Pondera para obtener varianza constante en las filas |
+
+
+Ejemplo en `R`:  
+
+```{r, echo = TRUE, eval = FALSE}
+X_nbq_w_bin = nb2listw(X_nb_queen, style = "B")  # Pesos binarios
+X_nbq_w_std = nb2listw(X_nb_queen, style = "W")  # Pesos estándar (default)
+X_nbq_w_sum = nb2listw(X_nb_queen, style = "S")  # Normalización por suma
+```
+
+---
+  
 
 ### Queen contiguity 
+
+Convierte `X_nb_queen` en un objeto **listw** (lista de pesos espaciales), que es la estructura que `R` usa en análisis espaciales como **Moran’s I o modelos espaciales**.
 
 
 ```{r}
