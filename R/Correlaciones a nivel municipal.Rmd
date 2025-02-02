@@ -328,25 +328,33 @@ layer_municipios <- merge(shape_municipios,
 # Paleta de colores 
 require(RColorBrewer)
 require(ggspatial)
+require(ggpubr)
 
 p <- ggplot() + 
       layer_spatial(layer_municipios, aes(fill = IM_2020), color = "transparent") + 
        layer_spatial(shape_estados, fill = "transparent", color = "black") + 
-       theme_bw() + 
-        theme(plot.title = element_text(size = 22, hjust = 0.15, family = "montserrat", face = "bold"),
+        theme_bw() + 
+         theme(plot.title = element_text(size = 22, hjust = 0.15, family = "montserrat", face = "bold"),
                plot.caption = element_text(size = 11, hjust = 0.2, vjust = 1, family = "montserrat"), 
-                legend.key.size = unit(0.5, "cm"),
-                 legend.text = element_text(size = 12, family = "montserrat"), 
-                  legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
-                   legend.position = c(0.8, 0.7)) + 
-            scale_fill_viridis_c(option = "A", begin = 0.3, end = 1) +
-           #scale_color_manual(values = c("#BDBDBD")) + 
+               legend.key.size = unit(0.5, "cm"),
+               legend.text = element_text(size = 12, family = "montserrat"), 
+               legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
+               legend.position = "right"
+               ) + 
+          scale_fill_viridis_c(option = "A", begin = 0.3, end = 1) +
+           scale_color_manual(values = c("#BDBDBD")) + 
             guides(color = guide_legend(override.aes = list(fill = usecol(pal = pal_petrol, n = 5)))) +
      labs(title = "Índice de marginación a nivel municipal, 2020",
            fill = stringr::str_wrap("Grado de marginación", 10), 
             caption = expression(paste("Fuentes: Estimaciones del CONAPO con base en el INEGI, Censo de Población y Vivienda 2020")))
 p
+path = "Output/Mapa del IMM2020.pdf"
+ggexport(p, filename = path ,width = 10, height = 10, device = "cairo")
 ```
+
+
+![](../Output/Mapa del IMM2020.png){width="70%" fig-align="center"}
+
 
 ## Centroides
 
@@ -435,6 +443,13 @@ $$
     $$
 
 Solo **el 0.47% de los enlaces posibles existen**, lo que indica que la red de vecindad es muy **dispersa** en comparación con una red completamente conectada.
+
+
+
+```{r}
+plot(layer_municipios, border = 'lightgrey')
+plot(X_nb_queen, coords, pch = 19, cex = 0.6, add = TRUE, col = "red")
+```
 
 
 ### Rook contiguity
@@ -573,7 +588,7 @@ X_nbr_w
 
 
 ```{r}
-#   Matriz de pesos normalizados en fila usando k = 4(W):
+#   Matriz de pesos normalizados en fila usando k = 5(W):
 X_kn4_w = nb2listw(X_kn4)
 X_kn4_w
 ```
@@ -597,24 +612,34 @@ summary(unlist(X_kn4_w$weights))  # Criterio k-vecinos
 
 Evaluando existencia de autocorrelación espacial
 
-$𝐼$ toma valores entre -1 y 1. Valores cercanos a 1 implican dependencia espacial positiva (valores vecinos similares) y valores cercanos a -1 implican dependencia espacial negativa (valores vecinos diferentes). Valores cercanos a cero implican no autocorrelación espacial.
+El **Índice de Moran** varía entre -1 y 1:   
+  - **\( I > 0 \)** indica correlación positiva (valores similares están agrupados).   
+- **\( I < 0 \)** indica correlación negativa (valores diferentes están cercanos entre sí).  
+- **\( I \approx 0 \)** sugiere ausencia de autocorrelación espacial.   
 
 `moran.test`: (Prueba I de Moran para autocorrelación espacial) Utiliza una matriz de ponderaciones espaciales en forma de lista de ponderaciones. La opción alternativa especifica la hipótesis alternativa, debe ser mayor (predeterminado), menor o como en este caso, bilateral (two.side).
 
 ```{r}
 # Primero usamos tipo reina:
-Ind_Moran_reina = moran.test(layer_municipios$IM_2020, listw = X_nbq_w, 
+Ind_Moran_queen = moran.test(layer_municipios$IM_2020, 
+                             listw = X_nbq_w, 
                              alternative = "two.side")
 
 # Luego tipo torre
-Ind_Moran_torre = moran.test(layer_municipios$IM_2020, listw = X_nbr_w, 
-                             alternative = "two.side")
+Ind_Moran_rook = moran.test(layer_municipios$IM_2020, 
+                            listw = X_nbr_w, 
+                            alternative = "two.side")
 
-# Ahora, usamos k = 4:
-Ind_Moran_k = moran.test(layer_municipios$IM_2020, listw = X_kn4_w, 
+# Ahora, usamos k = 5:
+Ind_Moran_k = moran.test(layer_municipios$IM_2020, 
+                         listw = X_kn4_w, 
                          alternative = "two.side") 
-prueba <- moran(layer_municipios$IM_2020, listw = X_nbq_w, length(X_nbq_w), Szero(X_nbq_w))
+
+Moran_Test <- moran(layer_municipios$IM_2020, listw = X_nbq_w, length(X_nbq_w), Szero(X_nbq_w))
+Moran_Test
 ```
+
+
 
 **Conclusión**: Por lo que los valores se acercan más a 1, significa la existencia de autocorrelación espacial positiva.
 
