@@ -3,7 +3,7 @@ title: "Análisis estadístico espacial"
 subtitle: "Utilizando el índice de marginación a nivel municipal"
 author: "Diana Villasana Ocampo"
 knit: (function(inputFile, encoding) {
-       rmarkdown::render(inputFile, encoding = encoding, output_dir = "Output/")
+       rmarkdown::render(inputFile, encoding = encoding, output_dir = "../Output/")
   })
 output:
    html_document:
@@ -96,7 +96,6 @@ h3 {
 </style>
 ```
 
-<https://rpubs.com/erikaaldisa/spatialclustering>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = TRUE, 
@@ -148,13 +147,13 @@ font_add_google("Montserrat", "montserrat")
 
 ## Objetivo
 
-El análisis espacial es un conjunto de técnicas y herramientas utilizadas para estudiar y comprender patrones, relaciones y procesos geográficos en un contexto espacial. Es decir, se enfoca en cómo los datos se distribuyen en el espacio y cómo se relacionan entre sí, en el cúal se utilizan técnicas como el mapeo, estadística espacial, sistemas de información geográfica (SIG) y la visualización para examinar los datos geográficos y descubrir patrones y relaciones en ellos.
+El análisis espacial es un conjunto de técnicas y herramientas utilizadas para estudiar y comprender patrones, relaciones y procesos geográficos en un contexto espacial. Es decir, se enfoca en cómo los datos se distribuyen en el espacio y cómo se relacionan entre sí, en el cúal se utilizan técnicas como el mapeo, estadística espacial, sistemas de información geográfica (`SIG`)` y la visualización para examinar los datos geográficos y descubrir patrones y relaciones en ellos.
 
 Estas técnicas permiten la detección de patrones y tendencias, la evaluación de la accesibilidad y la conectividad, la modelización de procesos geográficos y la planificación y toma de decisiones basadas en la información geográfica. La cuales sirven como ayuda para campos, como la geografía, planificación urbana, epidemiología, gestión de recursos naturales, criminología y arqueología, entre otros.
 
 ## Correlaciones espaciales
 
-Las correlaciones espaciales permiten analizar la relación entre variables geográficas considerando su distribución en el espacio. A diferencia de las correlaciones tradicionales, que suponen independencia entre observaciones, las correlaciones espaciales reconocen que valores cercanos tienden a estar más relacionados que aquellos más alejados, fenómeno conocido como autocorrelación espacial. Este tipo de análisis es fundamental en estudios de patrones geográficos, como la distribución de la pobreza, el acceso a servicios o la dinámica migratoria, y se mide comúnmente mediante indicadores como el índice de Moran o la estadística de Geary. Su aplicación ayuda a identificar clusters espaciales, entender dinámicas territoriales y mejorar la toma de decisiones en políticas públicas y planificación urbana.
+Las correlaciones espaciales permiten analizar la relación entre variables geográficas considerando su distribución en el espacio. A diferencia de las correlaciones tradicionales, que suponen independencia entre observaciones, las correlaciones espaciales reconocen que valores cercanos tienden a estar más relacionados que aquellos más alejados, fenómeno conocido como autocorrelación espacial. Este tipo de análisis es fundamental en estudios de patrones geográficos, como la distribución de la pobreza, el acceso a servicios o la dinámica migratoria, y se mide comúnmente mediante indicadores como el `índice de Moran` o la `estadística de Geary`. Su aplicación ayuda a identificar clusters espaciales, entender dinámicas territoriales y mejorar la toma de decisiones en políticas públicas y planificación urbana.
 
 El cálculo de la correlación espacial se basa en la relación entre los valores de una variable y su distribución geográfica. Los métodos más utilizados son el **Índice de Moran** y la **estadística de Geary**, que cuantifican la autocorrelación espacial en diferentes escalas.
 
@@ -446,71 +445,6 @@ Solo **el 0.47% de los enlaces posibles existen**, lo que indica que la red de v
 
 
 
-```{r}
-plot(layer_municipios, border = 'lightgrey')
-plot(X_nb_queen, coords, pch = 19, cex = 0.6, add = TRUE, col = "red")
-```
-
-```{r}
-library(ggplot2)
-library(sf)
-library(spdep)
-library(ggspatial)
-library(viridis)
-
-proj4string(layer_municipios)
-plot(X_nb_queen, coords)
-# Convertir layer_municipios a sf si no lo está
-target_crs <- st_crs(layer_municipios) # Extraer CRS original
-coords_sf <- st_as_sf(as.data.frame(coords), coords = c("V1", "V2"), crs = target_crs)
-
-rm(nb_lines)
-# Obtener enlaces de vecinos en formato de líneas
-nb_lines <- unlist(
-            lapply(1:length(X_nb_queen), function(i) {
-              if (length(X_nb_queen[[i]]) > 0) {
-                lapply(X_nb_queen[[i]], function(j) {
-                  st_linestring(rbind(coords[i, ], coords[j, ]))
-                })
-              } else {
-                NULL
-              }
-            }), recursive = FALSE
-          )
-
-X_nb_queen[[2]]
-nb_lines_sf <- st_sfc(nb_lines, crs = target_crs)
-
-# Convertir a un sf object
-graph_sf <- st_as_sf(nb_lines_sf, crs = target_crs)
-
-plot(nb_lines_sf)
-# Crear el gráfico
-ggplot() +
-  layer_spatial(data = layer_municipios, aes(fill = IM_2020), color = "transparent") +
-  layer_spatial(data = shape_estados, fill = "transparent", color = "black") +
-  geom_sf(data = graph_sf, color = "red", size = 0.4, alpha = 0.7) +  # Líneas de vecinos
-  geom_sf(data = coords_sf, color = "red", size = 0.6) +  # Puntos de los municipios
-  theme_bw() +
-  theme(
-    plot.title = element_text(size = 22, hjust = 0.15, family = "montserrat", face = "bold"),
-    plot.caption = element_text(size = 11, hjust = 0.2, vjust = 1, family = "montserrat"),
-    legend.key.size = unit(0.5, "cm"),
-    legend.text = element_text(size = 12, family = "montserrat"),
-    legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
-    legend.position = "right"
-  ) +
-  scale_fill_viridis_c(option = "A", begin = 0.3, end = 1) +
-  labs(
-    title = "Índice de marginación a nivel municipal, 2020",
-    fill = stringr::str_wrap("Grado de marginación", 10),
-    caption = expression(paste("Fuentes: Estimaciones del CONAPO con base en el INEGI, Censo de Población y Vivienda 2020"))
-  )
-
-```
-
-
-
 ### Rook contiguity
 
 `X_nb_rook` es una lista de vecindad espacial basada en la regla del torre (Rook Contiguity) en lugar de la regla de la reina, con el parámetro `queen = FALSE`.
@@ -580,6 +514,64 @@ Solo **el 0.40% de los enlaces posibles existen**, lo que indica que la red de v
   | Regla del Torre (`X_nb_rook`)    | 5.75                           | 14,200           | ✅ Sí |
   | KNN con \( k = 4 \) (`X_kn4`)    | 5                              | 9,876            | ❌ No |             
 
+
+```{r, eval = FALSE, class.source = "fold-hide"}
+library(ggplot2)
+library(sf)
+library(spdep)
+library(ggspatial)
+library(viridis)
+
+
+#plot(layer_municipios, border = 'lightgrey')
+#plot(X_nb_queen, coords, pch = 19, cex = 0.6, add = TRUE, col = "red")
+
+# Se convierten los layer_municipios y centroides a sf (spatial features)
+target_crs <- st_crs(layer_municipios) # Extraer CRS original
+coords_sf <- st_as_sf(as.data.frame(coords), coords = c("V1", "V2"), crs = target_crs)
+
+# Se obtienen los enlaces de vecinos en formato de líneas
+nb_lines <- unlist(
+            lapply(1:length(X_nb_queen), function(i) {
+              if (length(X_nb_queen[[i]]) > 0) {
+                lapply(X_nb_queen[[i]], function(j) {
+                  st_linestring(rbind(coords[i, ], coords[j, ]))
+                })
+              } else {
+                NULL
+              }
+            }), recursive = FALSE
+          )
+
+nb_lines_sf <- st_sfc(nb_lines, crs = target_crs)
+
+# Se convierten los enlaces de líneas a un sf object
+graph_sf <- st_as_sf(nb_lines_sf, crs = target_crs)
+
+# Crear el gráfico
+p <- ggplot() +
+      layer_spatial(data = shape_estados, fill = "transparent", color = "black") +
+       geom_sf(data = graph_sf, color = "#7f7f7f", size = 0.3, alpha = 0.2) +  # Líneas de vecinos
+        geom_sf(data = coords_sf, color = "#1d6d9c", size = 0.6) +  # Puntos de los municipios
+         theme_bw() +
+          theme(plot.title = element_text(size = 22, hjust = 0.15, family = "montserrat", face = "bold"),
+                plot.subtitle = element_text(size = 20, hjust = 0.15, family = "montserrat", face = "bold"),
+                plot.caption = element_text(size = 11, hjust = 0.5, vjust = 1, family = "montserrat"),
+                legend.key.size = unit(0.5, "cm"),
+                legend.text = element_text(size = 12, family = "montserrat"),
+                legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
+                legend.position = "right"
+                ) +
+            labs(title = "Mapa de distancias utilizando la regla de la reina",
+                 caption = expression(paste("Fuentes: Elaboración propia"))
+            )
+p
+
+path = paste0(here::here(), "/Output/Mapa de distancias.pdf")
+ggexport(p, filename = path ,width = 10, height = 10, device = "cairo")
+```
+
+![](../Output/Mapa de distancias.png){width="70%" fig-align="center"}
 
 ## Ponderaciones
 
