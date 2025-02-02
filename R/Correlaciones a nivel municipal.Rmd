@@ -451,6 +451,65 @@ plot(layer_municipios, border = 'lightgrey')
 plot(X_nb_queen, coords, pch = 19, cex = 0.6, add = TRUE, col = "red")
 ```
 
+```{r}
+library(ggplot2)
+library(sf)
+library(spdep)
+library(ggspatial)
+library(viridis)
+
+proj4string(layer_municipios)
+plot(X_nb_queen, coords)
+# Convertir layer_municipios a sf si no lo está
+target_crs <- st_crs(layer_municipios) # Extraer CRS original
+coords_sf <- st_as_sf(as.data.frame(coords), coords = c("V1", "V2"), crs = target_crs)
+
+rm(nb_lines)
+# Obtener enlaces de vecinos en formato de líneas
+nb_lines <- unlist(
+            lapply(1:length(X_nb_queen), function(i) {
+              if (length(X_nb_queen[[i]]) > 0) {
+                lapply(X_nb_queen[[i]], function(j) {
+                  st_linestring(rbind(coords[i, ], coords[j, ]))
+                })
+              } else {
+                NULL
+              }
+            }), recursive = FALSE
+          )
+
+X_nb_queen[[2]]
+nb_lines_sf <- st_sfc(nb_lines, crs = target_crs)
+
+# Convertir a un sf object
+graph_sf <- st_as_sf(nb_lines_sf, crs = target_crs)
+
+plot(nb_lines_sf)
+# Crear el gráfico
+ggplot() +
+  layer_spatial(data = layer_municipios, aes(fill = IM_2020), color = "transparent") +
+  layer_spatial(data = shape_estados, fill = "transparent", color = "black") +
+  geom_sf(data = graph_sf, color = "red", size = 0.4, alpha = 0.7) +  # Líneas de vecinos
+  geom_sf(data = coords_sf, color = "red", size = 0.6) +  # Puntos de los municipios
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 22, hjust = 0.15, family = "montserrat", face = "bold"),
+    plot.caption = element_text(size = 11, hjust = 0.2, vjust = 1, family = "montserrat"),
+    legend.key.size = unit(0.5, "cm"),
+    legend.text = element_text(size = 12, family = "montserrat"),
+    legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
+    legend.position = "right"
+  ) +
+  scale_fill_viridis_c(option = "A", begin = 0.3, end = 1) +
+  labs(
+    title = "Índice de marginación a nivel municipal, 2020",
+    fill = stringr::str_wrap("Grado de marginación", 10),
+    caption = expression(paste("Fuentes: Estimaciones del CONAPO con base en el INEGI, Censo de Población y Vivienda 2020"))
+  )
+
+```
+
+
 
 ### Rook contiguity
 
