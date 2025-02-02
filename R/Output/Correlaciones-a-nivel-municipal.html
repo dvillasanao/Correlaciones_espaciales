@@ -2235,19 +2235,54 @@ regla de la torre.</p>
 <p><code>X_kn4</code> se crea una lista de vecinos basada en la
 proximidad de coordenadas usando el método de los <span class="math inline">\(k\)</span> vecinos más cercanos
 (<em>k</em>-nearest neighbors, KNN) con <span class="math inline">\(k =
-4\)</span>.</p>
+5\)</span>.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r fold-show"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Construyendo lista de vecinos con k-vecinos más cercanos</span></span>
 <span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>IDs <span class="ot">=</span> <span class="fu">row.names</span>(<span class="fu">as</span>(layer_municipios, <span class="st">&quot;data.frame&quot;</span>)) <span class="co"># Id de las filas</span></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>X_kn4 <span class="ot">=</span> <span class="fu">knn2nb</span>(<span class="fu">knearneigh</span>(coords, <span class="at">k =</span> <span class="dv">4</span>), <span class="at">row.names =</span> IDs) </span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>X_kn4 <span class="ot">=</span> <span class="fu">knn2nb</span>(<span class="fu">knearneigh</span>(coords, <span class="at">k =</span> <span class="dv">5</span>), <span class="at">row.names =</span> IDs) </span>
 <span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>X_kn4</span></code></pre></div>
 <pre><code>## Neighbour list object:
 ## Number of regions: 2469 
-## Number of nonzero links: 9876 
-## Percentage nonzero weights: 0.1620089 
-## Average number of links: 4 
+## Number of nonzero links: 12345 
+## Percentage nonzero weights: 0.2025111 
+## Average number of links: 5 
 ## Non-symmetric neighbours list</code></pre>
-<p>### <strong>📊 Comparación con <code>X_nb_queen</code> y
-<code>X_nb_rook</code></strong></p>
+<ul>
+<li><p>Se indica que hay 9876 conexiones entre municipios. - Como se usó
+<span class="math inline">\(k = 5\)</span>, cada municipio tiene
+<strong>exactamente 5 vecinos</strong>, lo que da un total de:<br />
+<span class="math display">\[
+2469 \times 5 = 12 345
+\]</span></p></li>
+<li><p><strong>A diferencia de <code>X_nb_queen</code> o
+<code>X_nb_rook</code></strong>, donde el número de vecinos varía, aquí
+<strong>todos tienen exactamente 5 vecinos</strong>.</p></li>
+<li><p>Aproximadamente el <strong>el 20% de los pares posibles de
+municipios están conectados</strong>. Es decir, es menor que en
+<code>X_nb_queen</code> (<strong>23.67%</strong>) y
+<code>X_nb_rook</code> (<strong>23.29%</strong>), lo que tiene sentido
+porque aquí cada municipio tiene un número fijo de vecinos menor que el
+promedio en los otros métodos.</p></li>
+<li><p>Cada municipio, está conectado por <strong>5 vecinos por
+municipio en promedio</strong>. Es decir, esto es
+<strong>esperado</strong>, ya que en <code>knn2nb(k = 5)</code>, cada
+municipio tiene exactamente 5 vecinos.</p></li>
+<li><p><strong>En <code>X_nb_queen</code> y <code>X_nb_rook</code>, el
+promedio era ~5.8 vecinos</strong> porque dependía de la geometría de
+los municipios.</p></li>
+</ul>
+<p>En la red de vecindad (con k - vecinos), hay <strong>12 345
+enlaces</strong>, lo que representa:</p>
+<p><span class="math display">\[
+    \frac{12 345}{3 045 846} \times 100 = 0.40%
+    \]</span></p>
+<p>Solo <strong>el 0.40% de los enlaces posibles existen</strong>, lo
+que indica que la red de vecindad es muy <strong>dispersa</strong> en
+comparación con una red completamente conectada y menor al utilizar la
+regla de la reina o torre.</p>
+</div>
+<div id="comparación-con-x_nb_queen-y-x_nb_rook" class="section level3">
+<h3><strong>📊 Comparación con <code>X_nb_queen</code> y
+<code>X_nb_rook</code></strong></h3>
 <table>
 <colgroup>
 <col width="32%" />
@@ -2279,7 +2314,7 @@ proximidad de coordenadas usando el método de los <span class="math inline">\(k
 <tr class="odd">
 <td>KNN con <span class="math inline">\(k = 4\)</span>
 (<code>X_kn4</code>)</td>
-<td align="center">4</td>
+<td align="center">5</td>
 <td align="center">9,876</td>
 <td>❌ No</td>
 </tr>
@@ -2299,6 +2334,8 @@ interdependencia existente entre cada par de unidades geográficas <span class="
 <p><code>nb2listw</code> (Pesos espaciales para listas de vecinos):
 Complementa una lista de vecinos con pesos espaciales para el esquema de
 codificación elegido.</p>
+<div id="queen-contiguity-1" class="section level3">
+<h3>Queen contiguity</h3>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r fold-show"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co">#   Matriz de pesos normalizados en fila </span></span>
 <span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co"># usando QUEEN(W) (Tipo reina):</span></span>
 <span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>X_nbq_w <span class="ot">=</span> <span class="fu">nb2listw</span>(X_nb_queen)</span>
@@ -2314,6 +2351,9 @@ codificación elegido.</p>
 ## Weights constants summary:
 ##      n      nn   S0       S1       S2
 ## W 2469 6095961 2469 906.4886 10394.24</code></pre>
+</div>
+<div id="rook-contiguity-1" class="section level3">
+<h3>Rook contiguity</h3>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r fold-show"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co">#   Matriz de pesos normalizados en fila </span></span>
 <span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co"># usando ROOK(W) (Tipo torre):</span></span>
 <span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>X_nbr_w <span class="ot">=</span> <span class="fu">nb2listw</span>(X_nb_rook)</span>
@@ -2329,6 +2369,9 @@ codificación elegido.</p>
 ## Weights constants summary:
 ##      n      nn   S0       S1       S2
 ## W 2469 6095961 2469 921.0298 10405.37</code></pre>
+</div>
+<div id="k-neighbours-contiguity-1" class="section level3">
+<h3>k-neighbours contiguity</h3>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r fold-show"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co">#   Matriz de pesos normalizados en fila usando k = 4(W):</span></span>
 <span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>X_kn4_w <span class="ot">=</span> <span class="fu">nb2listw</span>(X_kn4)</span>
 <span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>X_kn4_w</span></code></pre></div>
@@ -2354,6 +2397,7 @@ codificación elegido.</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode r fold-show"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">unlist</span>(X_kn4_w<span class="sc">$</span>weights))  <span class="co"># Criterio k-vecinos</span></span></code></pre></div>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 ##    0.25    0.25    0.25    0.25    0.25    0.25</code></pre>
+</div>
 </div>
 <div id="índice-de-moran" class="section level2">
 <h2>Índice de Moran:</h2>

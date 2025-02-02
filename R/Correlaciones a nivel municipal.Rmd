@@ -467,24 +467,45 @@ Solo **el 0.46% de los enlaces posibles existen**, lo que indica que la red de v
 
 ### k-neighbours contiguity  
 
-`X_kn4` se crea una lista de vecinos basada en la proximidad de coordenadas usando el método de los $k$ vecinos más cercanos (*k*-nearest neighbors, KNN) con $k = 4$.   
+`X_kn4` se crea una lista de vecinos basada en la proximidad de coordenadas usando el método de los $k$ vecinos más cercanos (*k*-nearest neighbors, KNN) con $k = 5$.   
 
 ```{r}
 # Construyendo lista de vecinos con k-vecinos más cercanos
 IDs = row.names(as(layer_municipios, "data.frame")) # Id de las filas
-X_kn4 = knn2nb(knearneigh(coords, k = 4), row.names = IDs) 
+X_kn4 = knn2nb(knearneigh(coords, k = 5), row.names = IDs) 
 X_kn4
 ```
 
+-   Se indica que hay 9876 conexiones entre municipios. - Como se usó \( k = 5 \), cada municipio tiene **exactamente 5 vecinos**, lo que da un total de:  
+  \[
+    2469 \times 5 = 12 345
+    \]
+- **A diferencia de `X_nb_queen` o `X_nb_rook`**, donde el número de vecinos varía, aquí **todos tienen exactamente 5 vecinos**.  
+
+-   Aproximadamente el **el 20% de los pares posibles de municipios están conectados**. Es decir, es menor que en `X_nb_queen` (**23.67%**) y `X_nb_rook` (**23.29%**), lo que tiene sentido porque aquí cada municipio tiene un número fijo de vecinos menor que el promedio en los otros métodos.
+
+-   Cada municipio, está conectado por **5 vecinos por municipio en promedio**. Es decir, esto es **esperado**, ya que en `knn2nb(k = 5)`, cada municipio tiene exactamente 5 vecinos.  
+
+- **En `X_nb_queen` y `X_nb_rook`, el promedio era ~5.8 vecinos** porque dependía de la geometría de los municipios.
+
+En la red de vecindad (con k - vecinos), hay **12 345 enlaces**, lo que representa:
+
+$$
+    \frac{12 345}{3 045 846} \times 100 = 0.40% 
+    $$
+
+Solo **el 0.40% de los enlaces posibles existen**, lo que indica que la red de vecindad es muy **dispersa** en comparación con una red completamente conectada y menor al utilizar la regla de la reina o torre. 
 
 
-  ### **📊 Comparación con `X_nb_queen` y `X_nb_rook`**   
+### **📊 Comparación con `X_nb_queen` y `X_nb_rook`**    
+  
   
   | Método                           | Vecinos por municipio (promedio) | Total de enlaces | Relación simétrica |
   |----------------------------------|:------------------------------:|:----------------:|----------------------|
   | Regla de la Reina (`X_nb_queen`) | 5.84                           | 14,428           | ✅ Sí | |
   | Regla del Torre (`X_nb_rook`)    | 5.75                           | 14,200           | ✅ Sí |
-  | KNN con \( k = 4 \) (`X_kn4`)    | 4                              | 9,876            | ❌ No |             
+  | KNN con \( k = 4 \) (`X_kn4`)    | 5                              | 9,876            | ❌ No |             
+
 
 ## Ponderaciones
 
@@ -494,6 +515,10 @@ Para considerar la estructura de vecindad y los efectos espaciales en la estimac
 
 `nb2listw` (Pesos espaciales para listas de vecinos): Complementa una lista de vecinos con pesos espaciales para el esquema de codificación elegido.
 
+
+### Queen contiguity 
+
+
 ```{r}
 #   Matriz de pesos normalizados en fila 
 # usando QUEEN(W) (Tipo reina):
@@ -501,18 +526,24 @@ X_nbq_w = nb2listw(X_nb_queen)
 X_nbq_w
 ```
 
+### Rook contiguity
+
+
 ```{r}
 #   Matriz de pesos normalizados en fila 
 # usando ROOK(W) (Tipo torre):
 X_nbr_w = nb2listw(X_nb_rook)
 X_nbr_w
 ```
+### k-neighbours contiguity
+
 
 ```{r}
 #   Matriz de pesos normalizados en fila usando k = 4(W):
 X_kn4_w = nb2listw(X_kn4)
 X_kn4_w
 ```
+
 
 Resumen estadístico de la matriz de pesos para cada criterio
 
