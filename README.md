@@ -43,6 +43,7 @@ install.packages(c("sf", "spdep", "ggplot2", "tidyverse", "tmap"))
 ## Resultados
 
 **Enlace**:
+<https://dvillasanao.github.io/Correlaciones_espaciales/Output/Correlaciones-a-nivel-municipal.html>
 
 - **Autocorrelación significativa**: La marginación muestra un patrón
   espacial significativo.
