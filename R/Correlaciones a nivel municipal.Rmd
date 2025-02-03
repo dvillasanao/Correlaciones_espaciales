@@ -323,7 +323,7 @@ layer_municipios <- merge(shape_municipios,
                             by = "CVE_GEO")
 ```
 
-```{r,fig.height=8, fig.width=10, eval = FALSE, class.source = "fold-hide"}
+```{r, fig.height=8, fig.width=10, eval = FALSE, class.source = "fold-hide"}
 # Paleta de colores 
 require(RColorBrewer)
 require(ggspatial)
@@ -789,7 +789,7 @@ moran.mc(layer_municipios$IM_2020, listw = X_kn4_w, nsim = 1000) # K-vecinos
 Dado que el p-value para cada método o criterio es igual a 0.001, y este valor es menor a 0.05, significa que se muestran agrupaciones estadísticamente significativas.  
 
 
-### **📌 Comparación entre métodos de vecindad**
+### 📌 Comparación entre métodos de vecindad
 
 | Vecindad | Moran I | p-valor |
 |----------|---------|---------|
@@ -855,7 +855,7 @@ geary.test(layer_municipios$IM_2020, listw = X_kn4_w,
 
 
 
-### **Comparación entre las tres definiciones de vecindad:**
+### Comparación entre las tres definiciones de vecindad:   
 - **Vecindad de Reina (queen):** `Geary C = 0.35505`
 - **Vecindad de Torre (rook):** `Geary C = 0.35505`
 - **k-vecinos (k = 5):** `Geary C = 0.32368`
@@ -867,6 +867,7 @@ geary.test(layer_municipios$IM_2020, listw = X_kn4_w,
 
 - **`geary.mc()`**: Utiliza simulaciones y es más **robusto** y **preciso**, especialmente en presencia de distribuciones no normales o datos atípicos.
 
+#### Queen contiguity 
 
 ```{r}
 geary.mc(layer_municipios$IM_2020, listw = X_nbq_w, nsim = 999) # Reina
@@ -879,43 +880,110 @@ geary.mc(layer_municipios$IM_2020, listw = X_nbq_w, nsim = 999) # Reina
 
 
 
+#### Rook contiguity 
+
 ```{r}
 geary.mc(layer_municipios$IM_2020, listw = X_nbr_w, nsim = 999) # Torre
 ```
+
+ - El test de **Geary C usando simulaciones de Monte Carlo** muestra que hay una **autocorrelación espacial positiva significativa** en los valores de `IM_2020` de los municipios, es decir, los municipios cercanos tienen **valores similares** en comparación con lo que sería esperado por azar.
+- El valor observado de **Geary C (0.35505)** es **más bajo** que lo esperado bajo la hipótesis nula, lo que refuerza la presencia de **autocorrelación espacial positiva**.
+- El **p-valor (0.001)** es **muy pequeño**, lo que indica que la autocorrelación observada es **estadísticamente significativa**.
+- El **ranking de 1** sugiere que el valor observado es **el más bajo** entre las simulaciones, lo que significa que la **agregación espacial de los valores** es mucho mayor de lo que sería aleatorio.
+
+
+
+#### k-neighbours contiguity 
 
 ```{r}
 geary.mc(layer_municipios$IM_2020, listw = X_kn4_w, nsim = 999) # K-vecinos
 ```
 
+- El test de **Geary C utilizando simulaciones de Monte Carlo** con la configuración de **k-vecinos (k=4)** muestra que existe una **autocorrelación espacial positiva significativa** entre los valores de `IM_2020` de los municipios.
+- El valor observado de **Geary C (0.32368)** es **bajo**, lo que indica que los municipios cercanos tienen **valores similares** en `IM_2020`, lo que implica una **autocorrelación espacial positiva**.
+- El **p-valor (0.001)** es **muy pequeño**, lo que significa que la **autocorrelación observada es estadísticamente significativa**.
+- El **ranking de 1** sugiere que el valor observado de **Geary C** es **el más bajo** entre las simulaciones, lo que indica que los valores son más **similares** de lo que sería esperado si no existiera autocorrelación.
+
+
+
 Dado que el p-value para cada método o criterio es igual a 0.001, y este valor es menor a 0.05, significa que se muestran agrupaciones estadísticamente significativas.
 
-## Prueba G(d) de Getis y Ord
+### Prueba G(d) de Getis y Ord
 
-globalG.test: La estadística G global para la autocorrelación espacial, que complementa las medidas locales de Gi LISA: localG..
+- **`geary.mc()`**: Es más útil para detectar **autocorrelación local** y analizar cómo las diferencias entre valores cercanos se comportan. Está más orientado a evaluar cómo se distribuyen los valores en relación con sus vecinos cercanos. Se usa generalmente cuando se quiere analizar si las **valores cercanos** son más similares o más dispersos entre sí.
 
-```{r}
-# Ahora, usando k = 4:
-G_Getis_k = globalG.test(layer_municipios$IM_2020, listw = X_kn4_w, 
-                         alternative = "two.side") 
-G_Getis_k
-```
+- **`globalG.test()`**: Es adecuado cuando se quiere evaluar la presencia de **agrupamientos espaciales globales** en un área geográfica, es decir, ver si hay **agrupamientos significativos de valores extremos (altos o bajos)** en todo el espacio. Se usa cuando el interés es encontrar **puntos calientes o fríos** dentro de la región geográfica.
 
-## Representación gráfica de la dependencia espacial
-
-n gráfico de dispersión que permite analizar la autocorrelación espacial global, es el denominado **Scatterplot de Moran univariante (Anselin, 1993)** .\
-Este gráfico se construye en un plano cartesiano, en el eje de abscisas se ubican los valores de la variable de estudio estandarizada (x), y en el eje de ordenadas, se ubican los valores del retardo espacial de la variable estandarizada. Entiéndase por retardo espacial de una unidad espacial $i$, al valor medio de todos los valores de la variable estandarizada correspondientes a las unidades espaciales vecinas de $i$.
-
-Si la nube de puntos tiende a formarse sobre la diagonal principal del plano cartesiano (cuadrante I y III, en contra de las manecillas de reloj), esto nos indicará la presencia de autocorrelación espacial positiva.
-
-Si la nube de puntos tiende a ubicarse sobre la diagonal secundaria del plano cartesiano (cuadrante II y IV, en contra de las manecillas de reloj) , será un indicio de existencia de autocorrelación espacial negativa.
-
-De lo contrario, si la nube de puntos de distribuye sobre los cuatro cuadrantes, esto nos indicará ausencia de autocorrelación espacial.
-
-`moran.plot`: (Diagrama de dispersión de Moran) Una gráfica de datos espaciales frente a sus valores espaciales rezagados, aumentada al informar el resumen de las medidas de influencia para la relación lineal entre los datos y el rezago.
+#### k-neighbours contiguity
 
 ```{r}
-scatterplot_moran = moran.plot(layer_municipios$IM_2020, listw = X_kn4_w, main = "Scatterplot de Moran para la pobreza", labels = unique(IMM_2020$CVE_MUN))
+# Ahora, usando k = 5:
+globalG.test(layer_municipios$IM_2020, listw = X_kn4_w, alternative = "two.side") 
 ```
+
+- Dado que el **p-valor es extremadamente bajo (< 2.2e-16)**, se **rechaza la hipótesis nula** y se concluye que **hay una agrupación espacial significativa** de los valores en el conjunto de datos. 
+- Sin embargo, el valor del **Global G observado** (cercano a cero) sugiere que no existe una **concentración fuerte de valores altos o bajos**. Este valor cercano a cero indica que los valores **no están fuertemente agrupados** en áreas de valores extremos (como puntos calientes o fríos), pero aún así, la estructura espacial **no es aleatoria**, lo que podría sugerir un patrón débil de agrupación.  
+
+  
+
+## Gráfico de dependencia espacial
+
+Un gráfico de dispersión que permite analizar la autocorrelación espacial global, es el denominado **Scatterplot de Moran univariante (Anselin, 1993)** . Este gráfico se construye en un plano cartesiano, en el eje de abscisas se ubican los valores de la variable de estudio estandarizada (x), y en el eje de ordenadas, se ubican los valores del retardo espacial de la variable estandarizada. 
+
+- Si la nube de puntos tiende a formarse sobre la diagonal principal del plano cartesiano (cuadrante I y III, en contra de las manecillas de reloj), esto nos indicará la presencia de autocorrelación espacial positiva.
+
+- Si la nube de puntos tiende a ubicarse sobre la diagonal secundaria del plano cartesiano (cuadrante II y IV, en contra de las manecillas de reloj) , será un indicio de existencia de autocorrelación espacial negativa.
+
+- De lo contrario, si la nube de puntos de distribuye sobre los cuatro cuadrantes, esto nos indicará ausencia de autocorrelación espacial.
+
+![](../Output/cuadrantes.png){width="50%" fig-align="center"}
+
+Utilizando la función `moran.plot` perite generar una gráfica de datos espaciales frente a sus valores espaciales rezagados,  al informar el resumen de las medidas de influencia para la relación lineal entre los datos y el rezago.
+
+
+```{r, fig.height=5, fig.width=7, eval = TRUE, class.source = "fold-hide"}
+require(ggrepel)
+
+mp <- moran.plot(layer_municipios$IM_2020, 
+                 listw = X_kn4_w, 
+                 main = "Scatterplot de Moran para la pobreza", 
+                 labels = unique(IMM_2020$CVE_MUN), 
+                 plot = FALSE)
+
+ggplot(mp, aes(x = x, y = wx)) + 
+ geom_point(shape = 1, 
+            color = "#0e4669", 
+            alpha = 0.5) + 
+  geom_smooth(formula = y ~ x, method = "loess") + 
+   geom_smooth(formula = y ~ x, 
+               method = "lm", 
+               se = FALSE, 
+               colour = "lightblue") + 
+     geom_hline(yintercept = mean(mp$wx), lty = 2) + 
+      geom_vline(xintercept = mean(mp$x), lty = 2) + 
+       geom_point(data = mp[mp$is_inf,], aes(x = x, y = wx), shape = 9, color = "#777777") +
+        geom_text_repel(data = mp[mp$is_inf,], 
+                         aes(x = x, 
+                             y = wx, 
+                             label = labels, 
+                             vjust = 1.5)) +
+         theme_bw() + 
+          theme(plot.title = element_text(size = 22, hjust = 0, family = "montserrat", face = "bold"),
+                plot.caption = element_text(size = 11, hjust = 0.2, vjust = 1, family = "montserrat"), 
+                text = element_text(family = "montserrat"), 
+                legend.key.size = unit(0.5, "cm"),
+                legend.text = element_text(size = 12, family = "montserrat"), 
+                legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
+                legend.position = "none"
+               ) +   
+         labs(title = "Gráfico de dependencia espacial",
+              subtitle = "Índice de marginación a nivel municipal",
+              y = "Rezago espacial de los municipios",
+              x = "Municipios")
+
+
+```
+
 
 Dado que la nube de puntos tiende a formarse sobre la diagonal principal del plano cartesiano (cuadrante I y III), esto indica la presencia de autocorrelación espacial positiva.
 
