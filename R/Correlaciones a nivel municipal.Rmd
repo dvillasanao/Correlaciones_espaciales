@@ -474,7 +474,7 @@ X_kn4 = knn2nb(knearneigh(coords, k = 5), row.names = IDs)
 X_kn4
 ```
 
--   Se indica que hay 9876 conexiones entre municipios. - Como se usó \( k = 5 \), cada municipio tiene **exactamente 5 vecinos**, lo que da un total de:  
+-   Se indica que hay 12 345 conexiones entre municipios. - Como se usó \( k = 5 \), cada municipio tiene **exactamente 5 vecinos**, lo que da un total de:  
   \[
     2469 \times 5 = 12 345
     \]
@@ -502,7 +502,7 @@ Solo **el 0.40% de los enlaces posibles existen**, lo que indica que la red de v
   |----------------------------------|:------------------------------:|:----------------:|----------------------|
   | Regla de la Reina (`X_nb_queen`) | 5.84                           | 14,428           | ✅ Sí | |
   | Regla del Torre (`X_nb_rook`)    | 5.75                           | 14,200           | ✅ Sí |
-  | KNN con \( k = 4 \) (`X_kn4`)    | 5                              | 9,876            | ❌ No |             
+  | KNN con \( k = 4 \) (`X_kn4`)    | 5                              | 12,345            | ❌ No |             
 
 
 ```{r, eval = FALSE, class.source = "fold-hide"}
