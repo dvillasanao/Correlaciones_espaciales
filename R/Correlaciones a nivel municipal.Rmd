@@ -111,30 +111,20 @@ rm(list = ls())
 ```{r, echo = FALSE, results=FALSE}
 # Paquetes que se usaron en el documento 
 require(dplyr)          #A Grammar of Data Manipulation 
-require(forcats)        #Tools for Working with Categorical Variables (Factors)
 require(ggplot2)        # Generar gráficos ggplot y la geometría de un mapa
-require(ggthemes)       # Extra Themes, scale and Geoms for ggplot2
-require(ggmap)          #Spatial Visualization with ggplot2 
-require(ggpubr)         # Based Publication Ready Plots with ggplot2
-require(ggimage)        # Plot images
-require(grDevices)      # Read vector files .svg
+require(RColorBrewer)
+require(ggspatial)
+require(ggpubr)
 require(knitr)
 require(kableExtra)
-require(lubridate)
-library(maptools)
 require(openxlsx)
 require(readxl)
-require(RColorBrewer)   #ColorBrewer Palettes 
 require(rgdal)          #Para importar shapefiles. 
 require(sp)             # Classes and Methos for Spatial Data
 library(spdep)    # Índice de Moran 
 require(spdplyr)        #Data manipulation verbs for the sptial classes
 require(tidyverse) 
-require(tmap)
-require(tmaptools)
-require(tibble)
 require(unikn)          # Paleta de colores
-require(viridisLite)    # Paleta de colores
 ```
 
 ```{r, echo = FALSE, results=FALSE}
@@ -987,13 +977,45 @@ ggplot(mp, aes(x = x, y = wx)) +
 
 Dado que la nube de puntos tiende a formarse sobre la diagonal principal del plano cartesiano (cuadrante I y III), esto indica la presencia de autocorrelación espacial positiva.
 
-## Prueba de presencia de autocorrelación espacial (local):
+## Indicador Local de Autocorrelación Espacial (LISA):
 
-Anselin (1995) se refirió a esto como una estadística “LISA”, para Indicador local de autocorrelación espacial.
+Anselin (1995) se refirió a esto como una estadística “LISA”, El **Indicador Local de Autocorrelación Espacial (LISA)** permite identificar la **autocorrelación espacial** a nivel local, es decir, en qué medida una unidad espacial (por ejemplo, municipio o vecindad) está asociada a sus vecinos cercanos en términos de alguna variable de interés. El cálculo de LISA se puede realizar con el paquete `spdep` en R.
+
 
 `localmoran`: La estadística local espacial I de Moran se calcula para cada zona en función del objeto de ponderaciones espaciales.
 
-`lag.listw`: Usando una representación dispersa de listw de una matriz de ponderaciones espaciales, calcula el vector de retardo.
+`lag.listw`: Usando una representación dispersa de listw de una matriz de ponderaciones espaciales, calcula el vector de retardo. 
+
+```{r, fig.height=6, fig.width=8, eval = TRUE, class.source = "fold-hide"}
+# Calcular LISA usando localmoran()
+LISA_result <- localmoran(layer_municipios$IM_2020, X_nbq_w)
+
+# Agregar los resultados de LISA al objeto espacial
+layer_municipios <- layer_municipios %>% 
+                     mutate(LISA = LISA_result[,1]) 
+
+ ggplot() +
+  layer_spatial(layer_municipios, aes(fill = LISA), color = "transparent") + 
+   layer_spatial(shape_estados, fill = "transparent", color = "black") + 
+    scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+     theme_bw() + 
+      theme(plot.title = element_text(size = 20, hjust = 0, family = "montserrat", face = "bold"),
+            plot.subtitle = element_text(size = 16, hjust = 0, family = "montserrat"),
+            plot.caption = element_text(size = 11, hjust = 0.2, vjust = 1, family = "montserrat"), 
+            legend.key.size = unit(0.5, "cm"),
+            legend.text = element_text(size = 9, family = "montserrat"), 
+            legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
+            legend.position = "right"
+               ) + 
+     labs(title = "LISA: Local Moran's I", 
+          subtitle = "Índice de marginación a nivel municipal, 2020",
+          fill = "LISA Value",
+          caption = expression(paste("Fuentes: Estimaciones del CONAPO con base en el INEGI, Censo de Población y Vivienda 2020")))
+ 
+#path = "Output/Mapa de LISA.pdf"
+#ggexport(p, filename = path ,width = 10, height = 10, device = "cairo")
+```
+
 
 ```{r}
 criterio <- X_nbq_w
