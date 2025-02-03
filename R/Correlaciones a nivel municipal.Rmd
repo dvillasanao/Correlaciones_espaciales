@@ -986,7 +986,7 @@ Anselin (1995) se refirió a esto como una estadística “LISA”, El **Indicad
 
 `lag.listw`: Usando una representación dispersa de listw de una matriz de ponderaciones espaciales, calcula el vector de retardo. 
 
-```{r, fig.height=6, fig.width=8, eval = TRUE, class.source = "fold-hide"}
+```{r, fig.height=6, fig.width=8, eval = FALSE, class.source = "fold-hide"}
 # Calcular LISA usando localmoran()
 LISA_result <- localmoran(layer_municipios$IM_2020, X_nbq_w)
 
@@ -994,77 +994,70 @@ LISA_result <- localmoran(layer_municipios$IM_2020, X_nbq_w)
 layer_municipios <- layer_municipios %>% 
                      mutate(LISA = LISA_result[,1]) 
 
- ggplot() +
-  layer_spatial(layer_municipios, aes(fill = LISA), color = "transparent") + 
-   layer_spatial(shape_estados, fill = "transparent", color = "black") + 
-    scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
-     theme_bw() + 
-      theme(plot.title = element_text(size = 20, hjust = 0, family = "montserrat", face = "bold"),
-            plot.subtitle = element_text(size = 16, hjust = 0, family = "montserrat"),
-            plot.caption = element_text(size = 11, hjust = 0.2, vjust = 1, family = "montserrat"), 
-            legend.key.size = unit(0.5, "cm"),
-            legend.text = element_text(size = 9, family = "montserrat"), 
-            legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
-            legend.position = "right"
-               ) + 
-     labs(title = "LISA: Local Moran's I", 
-          subtitle = "Índice de marginación a nivel municipal, 2020",
-          fill = "LISA Value",
-          caption = expression(paste("Fuentes: Estimaciones del CONAPO con base en el INEGI, Censo de Población y Vivienda 2020")))
+p <-  ggplot() +
+       layer_spatial(layer_municipios, aes(fill = LISA), color = "transparent") + 
+        layer_spatial(shape_estados, fill = "transparent", color = "black") + 
+         scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+          theme_bw() + 
+           theme(plot.title = element_text(size = 20, hjust = 0, family = "montserrat", face = "bold"),
+                 plot.subtitle = element_text(size = 16, hjust = 0, family = "montserrat"),
+                 plot.caption = element_text(size = 11, hjust = 0.2, vjust = 1, family = "montserrat"), 
+                 legend.key.size = unit(0.5, "cm"),
+                 legend.text = element_text(size = 9, family = "montserrat"), 
+                 legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
+                 legend.position = "right"
+                   ) + 
+            labs(title = "LISA: Local Moran's I", 
+                 subtitle = "Índice de marginación a nivel municipal, 2020",
+                 fill = "LISA Value",
+                 caption = expression(paste("Fuentes: Estimaciones del CONAPO con base en el INEGI, Censo de Población y Vivienda 2020")))
  
-#path = "Output/Mapa de LISA.pdf"
-#ggexport(p, filename = path ,width = 10, height = 10, device = "cairo")
+path = "Output/Mapa de LISA.pdf"
+ggexport(p, filename = path ,width = 10, height = 10, device = "cairo")
+```
+![](../Output/Mapa de LISA.png){width="70%" fig-align="center"}
+
+### Cluster map 
+
+```{r, fig.height=6, fig.width=8, eval = FALSE, class.source = "fold-hide"}
+LISA_result <- localmoran(layer_municipios$IM_2020, listw = X_nbq_w)
+
+layer_municipios@data  <- layer_municipios@data %>% 
+                            mutate(pvalue = LISA_result[,5],
+                                   cX = .$IM_2020 - mean(IM_2020)) %>% # IM - Media(IM) 
+                             mutate(lagDV = lag.listw(X_nbq_w, .$IM_2020)) %>% # Calcula el rezago (promedios)
+                              mutate(clagDV = .$lagDV - mean(lagDV)) %>% # Rezago - Media(Rezago)
+                               mutate(quadrant = case_when(.$cX > 0 & .$clagDV > 0 & .$pvalue <= 0.05 ~ "Alto-Alto", 
+                                                           .$cX < 0 & .$clagDV < 0 & .$pvalue <= 0.05 ~ "Bajo-Bajo",
+                                                           .$cX < 0 & .$clagDV > 0 & .$pvalue <= 0.05 ~ "Bajo-Alto",
+                                                           .$cX > 0 & .$clagDV < 0 & .$pvalue <= 0.05 ~ "Alto-Bajo") 
+                                      ) %>% 
+                                mutate(quadrant = fct_relevel(.$quadrant, c("Alto - Alto", "Bajo - Bajo", "Bajo - Alto", "Alto - Bajo")))
+           
+p <- ggplot() +
+      layer_spatial(layer_municipios, aes(fill = quadrant), color = "transparent") + 
+       layer_spatial(shape_estados, fill = "transparent", color = "black") + 
+        scale_fill_manual(values = pals::brewer.rdbu(4),  na.value = "transparent") +
+         theme_bw() + 
+          theme(plot.title = element_text(size = 20, hjust = 0, family = "montserrat", face = "bold"),
+                plot.subtitle = element_text(size = 16, hjust = 0, family = "montserrat"),
+                plot.caption = element_text(size = 11, hjust = 0.2, vjust = 1, family = "montserrat"), 
+                legend.key.size = unit(0.5, "cm"),
+                legend.text = element_text(size = 9, family = "montserrat"), 
+                legend.title = element_text(size = 10, hjust = 0.5, family = "montserrat", face = "bold"),
+                legend.position = "right"
+                   ) + 
+          labs(title = "LISA Cluster Map", 
+               subtitle = "Índice de marginación a nivel municipal, 2020",
+               fill = "LISA Value",
+               caption = expression(paste("Fuentes: Estimaciones del CONAPO con base en el INEGI, Censo de Población y Vivienda 2020")))
+
+path = "Output/Mapa de clusters.pdf"
+ggexport(p, filename = path, width = 10, height = 10, device = "cairo")
 ```
 
+![](../Output/Mapa de clusters.png){width="70%" fig-align="center"}
 
-```{r}
-criterio <- X_nbq_w
-LISA <- function(criterio) {
-  
-          P = localmoran(layer_municipios$IM_2020, listw = criterio)
-          cX = layer_municipios$IM_2020 - mean(layer_municipios$IM_2020) # IM - Media(IM)
-          lagDV = lag.listw(X_nbq_w, layer_municipios$IM_2020) # Calcula el retardo (promedios)
-          clagDV = lagDV - mean(lagDV) # Retardo - Media(Retardo)
-          p = P[,5] # Toma la columna: Pr(z > 0) de P
-        
-          # Se inicializa vector numerico de longitud filas de P (666)
-          quadrant = vector(mode="numeric",length=nrow(P))+5
-          quadrant[cX>0 & clagDV>0 & p<= 0.05] = 1 # Alto-Alto
-          quadrant[cX<0 & clagDV<0 & p<= 0.05] = 2 # Bajo-Bajo
-          quadrant[cX<0 & clagDV>0 & p<= 0.05] = 3 # Bajo-Alto
-          quadrant[cX>0 & clagDV<0 & p<= 0.05] = 4 # Alto-Bajo
-        
-          # Grafico  
-          brks = c(1,2,3,4,5)
-          colors = c("red", "blue", "light blue", "pink", "white")
-          plot(layer_municipios, border ="lightgray", col=colors[findInterval(quadrant,brks,all.inside=FALSE)])
-          legend("bottomright", legend = c("High-High", "Low-Low", "Low-High", "High-Low", "Insignificant"), fill = colors, bty="n", cex=0.7, y.intersp=1, x.intersp=1)
-          box()
-          title("LISA Cluster Map")
-}
-```
-
-```{r}
-LISA(criterio = X_nbq_w)
-```
-
-```{r, eval = FALSE}
-tabla <- read.delim("C:/Users/dvill/Downloads/2022_12_3_00/2022_12_3_00.txt", sep = "\t", fill = TRUE , header = TRUE, quote = "\"")
-
-require(Rcmdr)
-
-
-#library(data.table)
-#setDT(df)[, observacion_izquierda := shift(observacion, n = 1, fill = NA, type = "lead")]
-```
-
-## Librerías
-
-**Librerías que se usaron en el trabajo**
-
-```{r, echo = FALSE}
-names(sessionInfo()$otherPkgs)
-```
 
 ## Referencias
 
@@ -1075,3 +1068,21 @@ Datos Abiertos de México - Índice de marginación (carencias poblacionales) po
 Bivand, R. S., Pebesma, E., & Gómez-Rubio, V. (2013). Applied Spatial Data Analysis with R (2nd ed.). Springer.
 
 RPubs - Spatial Clustering of Univariate Geographically Referenced Attribute. (2020). Retrieved January 30, 2025, from <https://rpubs.com/erikaaldisa/spatialclustering>
+
+
+## Librerías
+
+**Librerías que se usaron en el trabajo** 
+
+```{r, collapse=FALSE}
+sesion_info <- devtools::session_info()
+```
+
+```{r, echo = FALSE}
+kable(dplyr::select(tibble::as_tibble(sesion_info$packages %>% dplyr::filter(attached == TRUE)),
+                    c(package, loadedversion, source))) %>%
+   kable_classic(full_width = TRUE, html_font = "montserrat", font_size = 10) 
+```
+
+<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img src="https://i.creativecommons.org/l/by/4.0/88x31.png" alt="Creative Commons Licence" style="border-width:0"/></a><br />This work by [**Diana Villasana Ocampo**]{xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName"} is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
+
