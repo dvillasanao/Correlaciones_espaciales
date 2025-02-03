@@ -616,7 +616,7 @@ X_nbq_w_sum = nb2listw(X_nb_queen, style = "S")  # Normalización por suma
 
 ### Queen contiguity 
 
-Convierte `X_nb_queen` en un objeto **listw** (lista de pesos espaciales), que es la estructura que `R` usa en análisis espaciales como **Moran’s I o modelos espaciales**.
+Se convierte `X_nb_queen` en una **lista** (lista de pesos espaciales), que es la estructura que `R` usa en análisis espaciales como **Moran’s I o modelos espaciales**.
 
 
 ```{r}
@@ -628,6 +628,7 @@ X_nbq_w
 
 ### Rook contiguity
 
+Se convierte `X_nb_rook` en una **lista** (lista de pesos espaciales), que es la estructura que `R` usa en análisis espaciales como **Moran’s I o modelos espaciales**.
 
 ```{r}
 #   Matriz de pesos normalizados en fila 
@@ -637,6 +638,7 @@ X_nbr_w
 ```
 ### k-neighbours contiguity
 
+Se convierte `X_kn4` en una **lista** (lista de pesos espaciales), que es la estructura que `R` usa en análisis espaciales como **Moran’s I o modelos espaciales**.
 
 ```{r}
 #   Matriz de pesos normalizados en fila usando k = 5(W):
@@ -668,103 +670,214 @@ El **Índice de Moran** varía entre -1 y 1:
 - **\( I < 0 \)** indica correlación negativa (valores diferentes están cercanos entre sí).  
 - **\( I \approx 0 \)** sugiere ausencia de autocorrelación espacial.   
 
-`moran.test`: (Prueba I de Moran para autocorrelación espacial) Utiliza una matriz de ponderaciones espaciales en forma de lista de ponderaciones. La opción alternativa especifica la hipótesis alternativa, debe ser mayor (predeterminado), menor o como en este caso, bilateral (two.side).
+`moran.test`: (Prueba `I de Moran` para autocorrelación espacial) Utiliza una matriz de ponderaciones espaciales en forma de lista de ponderaciones. La opción alternativa especifica la hipótesis alternativa, debe ser mayor (predeterminado), menor o como en este caso, bilateral (`two.side`).  
+
+
+### Queen contiguity
 
 ```{r}
-# Primero usamos tipo reina:
+# Regla de la reina:
 Ind_Moran_queen = moran.test(layer_municipios$IM_2020, 
                              listw = X_nbq_w, 
                              alternative = "two.side")
+Ind_Moran_queen
+```
 
-# Luego tipo torre
+
+- **Moran I statistic = 0.6465**. Indica una fuerte **autocorrelación espacial positiva**. Los municipios con valores altos de `IM_2020` tienden a estar cerca de otros municipios con valores altos, y los municipios con valores bajos tienden a estar cerca de otros municipios con valores bajos.    
+
+- **Expectation = -0.0004**. Es el valor esperado de Moran I bajo la hipótesis nula (aleatoriedad espacial).  Un valor muy cercano a 0, indica que **sin autocorrelación, esperaríamos valores cercanos a 0**.  
+
+- Significancia estadística **p-value < 2.2e-16**. Indica que la probabilidad de obtener un Moran I tan alto por azar es **prácticamente 0**. Por lo tanto se rechaza la hipótesis nula, es decir, hay evidencia estadísticamente significativa de autocorrelación espacial en `IM_2020`.    
+
+### Rook contiguity
+
+```{r}
+# Regla de la torre
 Ind_Moran_rook = moran.test(layer_municipios$IM_2020, 
                             listw = X_nbr_w, 
                             alternative = "two.side")
+Ind_Moran_rook
+```
 
-# Ahora, usamos k = 5:
+- **Moran I sigue siendo alto (~0.647 en ambos casos)**.Existe una fuerte **autocorrelación espacial positiva**.  
+- **El Z-score es similar (~53 en ambos casos)**.La evidencia de autocorrelación espacial es estadísticamente significativa.  
+- **El p-valor sigue siendo < 2.2e-16**.La autocorrelación observada **no es aleatoria**.  
+
+
+### k-neighbours contiguity
+
+```{r}
+# k-veciono con k = 5:
 Ind_Moran_k = moran.test(layer_municipios$IM_2020, 
                          listw = X_kn4_w, 
                          alternative = "two.side") 
+Ind_Moran_k
+```
 
+
+- **Moran I más alto (0.6605 vs. ~0.646)** → Mayor **dependencia espacial entre municipios** cuando se usa k-vecinos.  
+- **Z-score más alto (55.253 vs. ~53)** → Mayor fuerza estadística en la relación espacial.  
+- **p-valor sigue siendo < 2.2e-16** → **Autocorrelación altamente significativa**, no es aleatoria.  
+
+
+
+#### 📊 **Resumen de los resultados**  
+
+| Regla de Vecindad | Moran I | Standard Deviate | p-valor |
+  |-------------------|---------|------------------|---------|
+  | **Queen (X_nbq_w)** | **0.6465** | **53.168** | **< 2.2e-16** |
+  | **Rook (X_nbr_w)**  | **0.6469** | **52.78**  | **< 2.2e-16** |
+  | **k-Vecinos (k = 5, X_kn4_w)** | **0.6605** | **55.253** | **< 2.2e-16** | 
+  
+
+### Moran test  
+
+Tanto `moran()` como `moran.test()` están relacionadas con el cálculo del Índice de Moran I, pero tienen propósitos distintos.   
+
+Utilizando la función `moran()`, calcula Moran I y además realiza una prueba de hipótesis para determinar si la autocorrelación espacial es estadísticamente significativa.
+
+```{r}
 Moran_Test <- moran(layer_municipios$IM_2020, listw = X_nbq_w, length(X_nbq_w), Szero(X_nbq_w))
 Moran_Test
 ```
 
+- Indice de Morán, tiene un  **valor obtenido: `0.0007855639`**. Un valor cercano a 0, indica **muy poca o nula autocorrelación espacial** en los datos.    
 
+- Factor de normalización **K = 7.847273**. Este valor es **un factor de normalización** utilizado en cálculos internos de Moran I. No tiene una interpretación directa, pero se usa para estandarizar el resultado. 
 
-**Conclusión**: Por lo que los valores se acercan más a 1, significa la existencia de autocorrelación espacial positiva.
 
 Recordemos La autocorrelación espacial positiva se presenta cuando valores altos [bajos] de la variable de estudio en una localización están asociados con valores altos [bajos] en las regiones vecinas. De manera que la tasa de pobreza en los diferentes puntos se va a presentar de forma similar y esto afirma la posible existencia de clústeres.
 
+
 ### Prueba del estadístico I de Moran
 
-Se calcula un pseudo valor p determinando, la proporción de los valores I de Moran local generados a partir de permutaciones que muestran más agrupaciones que los datos originales. Si esta proporción (el pseudo valor p) es pequeña (menos de 0.05), puede concluir que sus datos muestran agrupaciones estadísticamente significativas.
+Se calcula un pseudo `p-value` determinando, la proporción de los valores I de Moran local generados a partir de permutaciones que muestran más agrupaciones que los datos originales. Si esta proporción (el pseudo valor p) es pequeña (menos de 0.05), puede concluir que sus datos muestran agrupaciones estadísticamente significativas.
 
-`moran.mc`: Esta es una prueba de permutación para el estadístico I de Moran calculado usando permutaciones aleatorias, para establecer el rango del estadístico observado en relación con los nsim valores simulados.
+`moran.mc`: Realiza una prueba de permutación de Monte Carlo para evaluar la significancia estadística del Índice de Moran I. Esto es útil para confirmar si la autocorrelación espacial observada es real o podría haber ocurrido por azar.
+
+#### Queen contiguity
 
 ```{r}
-moran.mc(layer_municipios$IM_2020, listw = X_nbq_w, nsim=999) # Reina
+moran.mc(layer_municipios$IM_2020, listw = X_nbq_w, nsim = 1000) # Reina
+```
+-  `statistic = 0.64652` (Índice de Moran I observado)** el valor es **positivo y alto (~0.5 - 1)**, indica una **fuerte autocorrelación espacial positiva**. Esto significa que **los municipios con valores similares del índice IM_2020 tienden a agruparse en el espacio geográfico**.  
+
+- Si el valor fuera cercano a 0, no habría autocorrelación espacial, y si fuera negativo, los valores disímiles estarían dispersos.    
+- **`p-value = 0.001` (Nivel de significancia estadística)**. Como el `p-value` es **menor que 0.05**, rechazamos la hipótesis nula de que **la autocorrelación espacial observada es producto del azar**. En otras palabras, **existe una agrupación espacial significativa de municipios con valores similares de IM_2020**.   
+
+#### Rook contiguity
+
+```{r}
+moran.mc(layer_municipios$IM_2020, listw = X_nbr_w, nsim  =1000) # Torre
 ```
 
+- El **p-valor es menor que 0.05**, lo que indica que la autocorrelación espacial observada **no es aleatoria**. Específicamente, como `p < 0.001`, podemos decir que **la evidencia de autocorrelación espacial es extremadamente fuerte**.  
+
+- **Valor:** `0.64693.  Como el **valor del estadístico es positivo y alto (~0.5 - 1)**, indica **fuerte autocorrelación espacial positiva**.  Esto significa que **los municipios con valores similares de IM_2020 tienden a agruparse cuando se usa la vecindad tipo torre**.    
+
+
+#### k-neighbours contiguity
+
 ```{r}
-moran.mc(layer_municipios$IM_2020, listw = X_nbr_w, nsim=999) # Torre
+moran.mc(layer_municipios$IM_2020, listw = X_kn4_w, nsim = 1000) # K-vecinos
+```
+- El estadístico de Moran I: 066055, sigue siendo **positivo y alto (~0.5 - 1)**, lo que indica **una fuerte autocorrelación espacial positiva**.  En este caso, el índice **es aún mayor** que con las reglas de la reina (`0.64652`) y la torre (`0.64693`), lo que sugiere **una mayor concentración espacial de valores similares** bajo esta definición de vecindad.  
+- Esto puede deberse a que la regla de k-vecinos **incluye siempre exactamente 5 vecinos**, independientemente de la geografía y los límites administrativos.  
+
+
+Dado que el p-value para cada método o criterio es igual a 0.001, y este valor es menor a 0.05, significa que se muestran agrupaciones estadísticamente significativas.  
+
+
+### **📌 Comparación entre métodos de vecindad**
+
+| Vecindad | Moran I | p-valor |
+|----------|---------|---------|
+| **Reina** (queen) | 0.64652 | `< 0.001` |
+| **Torre** (rook) | 0.64693 | `< 0.001` |
+| **k-vecinos (k=5)** | 0.66055 | `< 0.001` |
+  
+  
+## Prueba C de Geary:  
+
+El test de Geary: `C` es una prueba estadística utilizada para evaluar la **autocorrelación espacial** en los datos. Mientras que el **Índice de Moran I** mide la **autocorrelación global** (es decir, si los valores de una variable se agrupan o dispersan en todo el espacio), el `Geary C` se centra en las diferencias locales entre vecinos. 
+
+
+El índice de Geary (`C`) es un índice de comparaciones por pares entre las diferentes zonas; por lo general varía entre 0 y 2. 
+
+El **valor de** $C$ varía entre $0$ y $2$:
+
+\- $C \approx 1$ indica independencia espacial (ausencia de correlación).
+
+\- $C < 1$ sugiere autocorrelación espacial positiva (valores similares están cerca).
+
+\- $C > 1$ indica autocorrelación espacial negativa (valores diferentes están cercanos entre sí).
+
+
+`geary.test`: (Prueba `C` de Geary para autocorrelación espacial).Utiliza una matriz de ponderaciones espaciales en forma de lista de ponderaciones. La opción alternativa especifica la hipótesis alternativa, debe ser mayor (predeterminado), menor o como en este caso, bilateral (two.side).
+
+### Queen contiguity
+
+```{r}
+# Regla de la reina:
+geary.test(layer_municipios$IM_2020, listw = X_nbq_w, alternative = "two.side")
 ```
 
-```{r}
-moran.mc(layer_municipios$IM_2020, listw = X_kn4_w, nsim=999) # K-vecinos
-```
+- **Valor:** `0.35505`.  El valor de **Geary C** **cerca de 0** indica **una fuerte autocorrelación espacial positiva**, ya que **valores cercanos a 0** sugieren que los valores similares están más agrupados entre los vecinos. En términos generales, este valor es **significativamente bajo**, lo que indica una tendencia a más similitud espacial entre los municipios vecinos.
 
-Dado que el p-value para cada método o criterio es igual a 0.001, y este valor es menor a 0.05, significa que se muestran agrupaciones estadísticamente significativas.
+- El **p-value es extremadamente bajo (< 2.2e-16)** (mucho menor que 0.05) indicando que se puede **rechazar la hipótesis nula** de que no hay autocorrelación espacial. Es decir, sugiere que los valores de IM_2020 están agrupados espacialmente de manera significativa, con municipios cercanos que muestran un comportamiento similar en cuanto al valor de IM_2020.
 
-## Prueba C de Geary:
 
-El índice de Geary (`C`) es un índice de comparaciones por pares entre las diferentes zonas; por lo general varía entre 0 y 2. - Un valor de $1$ indica ausencia de autocorrelación, es decir, que los valores de una zona no están relacionados con los valores de zonas cercanas. - Los valores inferiores a $<1$ indican autocorrelación espacial positiva, - Mientras que valores superiores a $>1$ indican autocorrelación espacial negativa (Griffith, 1987).
-
-`geary.test`: (Prueba `C` de Geary para autocorrelación espacial) Utiliza una matriz de ponderaciones espaciales en forma de lista de ponderaciones. La opción alternativa especifica la hipótesis alternativa, debe ser mayor (predeterminado), menor o como en este caso, bilateral (two.side).
+### Rook contiguity
 
 ```{r}
-# Primero usamos tipo reina:
-C_Geary_reina = geary.test(layer_municipios$IM_2020, listw = X_nbq_w, 
+# Regla de la torre
+geary.test(layer_municipios$IM_2020, listw = X_nbr_w, 
                              alternative = "two.side")
+```
 
-# Luego tipo torre
-C_Geary_torre = geary.test(layer_municipios$IM_2020, listw = X_nbr_w, 
-                             alternative = "two.side")
+- El valor de **Geary C (`0.35505`) es considerablemente bajo**, lo que indica que los valores de `IM_2020` se agrupan más de lo que se esperaría por azar.
+- El **p-valor extremadamente bajo (< 2.2e-16)** sugiere que **esta agrupación espacial es altamente significativa**. Esto refuerza la idea de que los municipios con valores similares en IM_2020 están agrupados** en el espacio y que esta agrupación es **significativa**.
 
-# Ahora, usamos k = 4:
-C_Geary_k = geary.test(layer_municipios$IM_2020, listw = X_kn4_w, 
+
+
+### k-neighbours contiguity  
+
+```{r}
+# k-vecinos, k = 5:
+geary.test(layer_municipios$IM_2020, listw = X_kn4_w, 
                          alternative = "two.side") 
 ```
 
-Resultados
+- **El test de Geary C con k-vecinos (k = 5)** confirma la presencia de **autocorrelación espacial positiva** en los datos de `IM_2020`.
+- El valor de **Geary C (`0.32368`) es aún más bajo** que en los análisis anteriores (Reina y Torre), lo que indica que **hay una agrupación espacial más fuerte** bajo la vecindad de **k-vecinos**.
+- El **p-valor extremadamente bajo (< 2.2e-16)** sugiere que **la autocorrelación espacial es altamente significativa**.
 
-```{r}
-C_Geary_reina
-```
 
-```{r}
-C_Geary_torre
-```
 
-```{r}
-C_Geary_k
-```
+### **Comparación entre las tres definiciones de vecindad:**
+- **Vecindad de Reina (queen):** `Geary C = 0.35505`
+- **Vecindad de Torre (rook):** `Geary C = 0.35505`
+- **k-vecinos (k = 5):** `Geary C = 0.32368`
 
-Observamos el C de Geary para:
 
--   Criterio reina: C =0.3795
--   Criterio torre: C = 0.3772
--   k-vecinos: C = 0.4074
+### Prueba del estadístico C de geary  
 
-Conclusión Por lo que los valores son menores que 1, confirma la existencia de autocorrelación espacial positiva.
+- **`geary.test()`**: Basado en aproximaciones asintóticas, puede ser más rápido pero menos flexible en ciertas situaciones.
 
-## Prueba del estadístico C de geary
+- **`geary.mc()`**: Utiliza simulaciones y es más **robusto** y **preciso**, especialmente en presencia de distribuciones no normales o datos atípicos.
 
-`geary.mc`: Esta es una prueba de permutación para el estadístico C de Geary calculado usando permutaciones aleatorias.
 
 ```{r}
 geary.mc(layer_municipios$IM_2020, listw = X_nbq_w, nsim = 999) # Reina
 ```
+
+- El test de **Geary C usando simulaciones de Monte Carlo** indica que hay una **autocorrelación espacial positiva significativa** en los datos de `IM_2020` para los municipios.
+- **El valor observado de Geary C (0.35579)** es mucho **más bajo** que el valor esperado bajo la hipótesis nula, lo que significa que los municipios cercanos tienen **valores más similares** en comparación con lo que sería esperado aleatoriamente.
+- El **p-valor (0.001)** es **muy pequeño**, lo que confirma que esta autocorrelación es significativa.
+- El **ranking de 1** también sugiere que el valor observado es **más bajo** que en todas las simulaciones aleatorias generadas.
+
+
 
 ```{r}
 geary.mc(layer_municipios$IM_2020, listw = X_nbr_w, nsim = 999) # Torre
