@@ -51,3 +51,8 @@ install.packages(c("sf", "spdep", "ggplot2", "tidyverse", "tmap"))
   marginación extrema en diferentes regiones del país.
 - **Visualización cartográfica**: Mapas que ilustran la distribución de
   la marginación y sus clusters.
+
+## Código de Conducta
+
+Por favor, revisa nuestro [Código de Conducta](CODE_OF_CONDUCT.md) antes
+de contribuir.
