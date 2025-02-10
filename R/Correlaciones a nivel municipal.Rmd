@@ -302,14 +302,14 @@ IMM_2020 <- read_xlsx("Bases/IMM_2020.xlsx", sheet = "IMM_2020") %>%
 
 ### SpatialPolygons
 
-Se fusionan los datos del `shape_municipios` con datos estadísticos del índice de marginación a nivel municipal (`IMM_2020`), excluyendo las claves estatales y municipales (`CVE_ENT`, `CVE_MUN`) y asegurando que `GM_2020` se ordene de acuerdo a los grados de marginación. El resultado es `layer_municipios`, un objeto que contiene a los municipios junto con sus atributos actualizados, lo que facilita su análisis y visualización en mapas.
+Se fusionan los datos del `shape_municipios` con datos estadísticos del índice de marginación a nivel municipal (`IMM_2020`), excluyendo las claves municipales (`CVE_MUN`) y asegurando que `GM_2020` se ordene de acuerdo a los grados de marginación. El resultado es `layer_municipios`, un objeto que contiene a los municipios junto con sus atributos actualizados, lo que facilita su análisis y visualización en mapas.
 
 #### $$SpatialPolygons \Rightarrow SpatialPolygons + Datos$$
 
 ```{r, class.source = "fold-show"}
 layer_municipios <- merge(shape_municipios,
-                           IMM_2020 %>% dplyr::select(c(-CVE_ENT, -CVE_MUN)) %>%
-                                         mutate(GM_2020 = fct_relevel(.$GM_2020,"Muy alto", "Alto", "Medio", "Bajo", "Muy bajo")),
+                           IMM_2020 %>% dplyr::select(c(-CVE_MUN)) %>%
+                                         mutate(GM_2020 = fct_relevel(.$GM_2020, "Muy alto", "Alto", "Medio", "Bajo", "Muy bajo")),
                             by = "CVE_GEO")
 ```
 
