@@ -9,6 +9,12 @@ a nivel municipal, elaborado por el **Consejo Nacional de Población
 (CONAPO)**. Se emplean diferentes estadísticos para evaluar la
 distribución espacial de la marginación en los municipios de México.
 
+<div style="display: flex; justify-content: center; gap: 10px;">
+
+<img src="Output/Mapa de clusters.png" width="70%" style="margin: 1px;">
+
+</div>
+
 ## Contenidos del Repositorio
 
 - **Datos**: Archivos de shapefiles con los municipios de México y el
@@ -43,7 +49,9 @@ install.packages(c("sf", "spdep", "ggplot2", "tidyverse", "tmap"))
 ## Resultados
 
 **Enlace**:
-<https://dvillasanao.github.io/Correlaciones_espaciales/Output/Correlaciones-a-nivel-municipal.html>
+<https://dvillasanao.github.io/Correlaciones_espaciales/Output/Correlaciones-a-nivel-municipal.html>  
+**Enlace de mapas**:
+<https://dvillasanao.github.io/Correlaciones_espaciales/Output/Mapas.html>
 
 - **Autocorrelación significativa**: La marginación muestra un patrón
   espacial significativo.
